@@ -798,15 +798,58 @@ function dropWire(e) {
 /* ---------------- transport ---------------- */
 
 const playBtn = document.getElementById("play");
+
+/* iOS Safari (16.4+): ask for the "playback" audio session so sound plays
+   even with the ring/silent switch flipped to silent */
+try { if (navigator.audioSession) navigator.audioSession.type = "playback"; } catch (e) {}
+
+function toast(msg, ms = 4500) {
+  let t = document.getElementById("toast");
+  if (!t) {
+    t = document.createElement("div");
+    t.id = "toast";
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(toast.timer);
+  toast.timer = setTimeout(() => t.classList.remove("show"), ms);
+}
+
 function play() {
-  AC.resume();
   playing = true;
+  const p = AC.resume();
+  if (p && p.catch) p.catch(() => {});
+  // iOS audio unlock: start a silent one-sample buffer inside the gesture
+  try {
+    const s = AC.createBufferSource();
+    s.buffer = AC.createBuffer(1, 1, AC.sampleRate);
+    s.connect(AC.destination);
+    s.start(0);
+  } catch (e) {}
   for (const m of modules) {
     if (m.tick) { m.pos = -1; m.nextT = AC.currentTime + 0.12; }
   }
   playBtn.textContent = "■";
   playBtn.classList.add("on");
+  setTimeout(() => {
+    if (!playing) return;
+    if (AC.state !== "running") {
+      toast("🔇 The browser is blocking audio — tap ▶ again. On iPhone, also check the silent switch and media volume.");
+    } else if (!modules.some((m) => m.type === "out")) {
+      toast("🔈 There's no speaker module — add one (+ speaker) and cable into its “in” jack.");
+    } else if (!conns.some((c) => c.b.m.type === "out")) {
+      toast("🔌 Nothing is plugged into the speaker — cable something into its “in” jack.");
+    }
+  }, 700);
 }
+/* if the context gets blocked or interrupted while playing, any tap revives it */
+document.addEventListener("pointerdown", () => {
+  if (playing && AC.state !== "running") {
+    const p = AC.resume();
+    if (p && p.catch) p.catch(() => {});
+  }
+}, true);
 function stop() {
   playing = false;
   AC.suspend();

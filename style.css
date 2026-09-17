@@ -293,6 +293,26 @@ select {
   border-radius: 5px;
 }
 
+/* ---------- toast ---------- */
+#toast {
+  position: fixed;
+  left: 50%;
+  bottom: 18px;
+  transform: translate(-50%, 12px);
+  z-index: 50;
+  max-width: min(440px, 90vw);
+  background: var(--panel);
+  border: 1px solid var(--dim);
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-size: 13px;
+  box-shadow: 0 8px 26px rgba(0, 0, 0, 0.55);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s, transform 0.25s;
+}
+#toast.show { opacity: 1; transform: translate(-50%, 0); }
+
 /* ---------- help overlay ---------- */
 #help[hidden] { display: none; }
 #help {
