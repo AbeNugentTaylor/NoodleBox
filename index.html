@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Noodle Box</title>
+    <meta name="description" content="A tiny modular synth playground: patch little machines together with cables and noodle around." />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.85em' font-size='90'%3E%F0%9F%8D%9C%3C/text%3E%3C/svg%3E" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header id="bar">
+      <a class="home" href="https://abe.cool" title="back to abe.cool">✨</a>
+      <h1>Noodle Box</h1>
+      <button id="play" class="play" title="play / stop (space)">▶</button>
+      <div class="chips" id="palette" aria-label="add a module"></div>
+      <div class="spacer"></div>
+      <div class="chips presets">
+        <span class="dim">patches:</span>
+        <button data-preset="starter">starter</button>
+        <button data-preset="acid">acid</button>
+        <button data-preset="drift">drift</button>
+      </div>
+      <button id="clear" title="remove everything">clear</button>
+      <button id="helpbtn" title="how does this work?">?</button>
+    </header>
+
+    <div id="work">
+      <div id="field">
+        <svg id="cables" aria-hidden="true"></svg>
+      </div>
+    </div>
+
+    <div id="help" hidden>
+      <div class="card">
+        <h2>How to play</h2>
+        <ul>
+          <li>Press <b>▶</b> to start the clock (and the sound).</li>
+          <li><b>Drag between two jacks</b> to run a cable — outputs on the right of a module, inputs on the left. Matching colors connect (<span class="j audio">●</span> signals, <span class="j gate">●</span> triggers).</li>
+          <li><b>Click a cable</b> to snip it. Drag a plugged input jack to unplug it.</li>
+          <li><b>Drag knobs</b> up/down to turn them (hold <b>shift</b> for fine control), double-click to reset.</li>
+          <li>On the <b>sequencer</b>: click a step to mute/unmute it, drag a step up/down to change its note.</li>
+          <li>Drag a module by its title to move it; <b>×</b> removes it.</li>
+        </ul>
+        <p class="tips">Ideas: envelope → amp <i>cv</i> makes plucks · lfo → filter <i>cut</i> makes wobble · a sequencer's <i>gate</i> into another sequencer's <i>clock</i> chains rhythms · cables into anything, there are no wrong answers.</p>
+        <button id="helpclose">got it</button>
+      </div>
+    </div>
+
+    <noscript><p style="padding:2rem;font-family:sans-serif">Noodle Box needs JavaScript (it's a synthesizer!).</p></noscript>
+    <script src="script.js"></script>
+  </body>
+</html>
