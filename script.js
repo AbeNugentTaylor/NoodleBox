@@ -425,15 +425,22 @@ const TYPES = {
     outs: [],
     create(m) {
       const g = AC.createGain();
-      const comp = AC.createDynamicsCompressor(); // soft safety limiter
-      comp.threshold.value = -12;
-      comp.ratio.value = 12;
+      const clip = AC.createWaveShaper(); // gentle safety limiter
+      const curve = new Float32Array(1024);
+      for (let i = 0; i < 1024; i++) {
+        const x = i / 511.5 - 1;
+        curve[i] = Math.tanh(2.5 * x) / Math.tanh(2.5);
+      }
+      clip.curve = curve;
+      const mute = AC.createGain();
+      mute.gain.value = playing ? 1 : 0; // transport controls this
       const an = AC.createAnalyser();
       an.fftSize = 1024;
-      g.connect(comp);
-      comp.connect(AC.destination);
-      g.connect(an);
-      m.n = { g, comp, an };
+      g.connect(clip);
+      clip.connect(mute);
+      mute.connect(AC.destination);
+      mute.connect(an);
+      m.n = { g, clip, mute, an };
       m.inT = { in: g };
       m.outN = {};
     },
@@ -816,6 +823,13 @@ function toast(msg, ms = 4500) {
   toast.timer = setTimeout(() => t.classList.remove("show"), ms);
 }
 
+const SILENT_WAV = "data:audio/wav;base64,UklGRkQDAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YSADAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==";
+let silentLoop = null;
+function setSpeakerMutes(on) {
+  for (const m of modules) {
+    if (m.type === "out") smooth(m.n.mute.gain, on ? 1 : 0, 0.02);
+  }
+}
 function play() {
   playing = true;
   const p = AC.resume();
@@ -827,6 +841,18 @@ function play() {
     s.connect(AC.destination);
     s.start(0);
   } catch (e) {}
+  // iOS ring/silent switch: keep a looping silent <audio> playing so the
+  // audio session counts as media playback (which the switch doesn't mute)
+  try {
+    if (!silentLoop) {
+      silentLoop = new Audio(SILENT_WAV);
+      silentLoop.loop = true;
+      silentLoop.setAttribute("playsinline", "");
+    }
+    const lp = silentLoop.play();
+    if (lp && lp.catch) lp.catch(() => {});
+  } catch (e) {}
+  setSpeakerMutes(true);
   for (const m of modules) {
     if (m.tick) { m.pos = -1; m.nextT = AC.currentTime + 0.12; }
   }
@@ -852,7 +878,8 @@ document.addEventListener("pointerdown", () => {
 }, true);
 function stop() {
   playing = false;
-  AC.suspend();
+  setSpeakerMutes(false); // keep the context running: Safari's suspend/resume can wedge silently
+  if (silentLoop) silentLoop.pause();
   playBtn.textContent = "▶";
   playBtn.classList.remove("on");
   for (const m of modules) if (m.cells) m.cells.forEach((c) => c.classList.remove("lit"));
