@@ -19,10 +19,17 @@ html, body {
   overscroll-behavior: none;
 }
 
-/* ---------- top bar ---------- */
+body {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---------- top bar ----------
+   A normal flex item (not fixed/absolute) sized to its own content, so the
+   workspace below never has to guess its height — however many rows the
+   bar wraps to, #work simply gets the rest of the screen. */
 #bar {
-  position: fixed;
-  inset: 0 0 auto 0;
+  flex: 0 0 auto;
   z-index: 40;
   display: flex;
   align-items: center;
@@ -69,12 +76,29 @@ html, body {
 .chips button { padding: 3px 9px; }
 #palette button { color: var(--mc, var(--ink)); }
 
+/* Narrow screens: the bar has a lot in it (palette, presets, transport).
+   Rather than let it wrap to several rows and eat the canvas below, pin it
+   to one slim scrollable strip — swipe sideways to reach presets/clear/help. */
+@media (max-width: 700px) {
+  #bar {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 6px 10px;
+  }
+  #bar h1 { display: none; }
+  #bar .spacer { display: none; flex: none; }
+  .chips.presets .dim { display: none; }
+  .chips { flex-wrap: nowrap; }
+  #bar button { flex: none; }
+}
+
 /* ---------- workspace ---------- */
 #work {
-  position: absolute;
-  inset: 0;
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0; /* let flex shrink this below #field's content size instead of growing the page */
   overflow: auto;
-  padding-top: 52px;
 }
 
 #field {
