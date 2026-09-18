@@ -69,6 +69,12 @@ body {
   min-width: 44px;
   border-color: #3a9d6e;
   color: #7cffb2;
+  /* pin it to the left edge of the bar so it's still reachable after
+     scrolling sideways to the palette/presets on a narrow screen — a
+     no-op on wider screens where the bar never scrolls horizontally */
+  position: sticky;
+  left: 0;
+  z-index: 2;
 }
 #play.on { background: #14301f; }
 
@@ -101,10 +107,21 @@ body {
   overflow: auto;
 }
 
-#field {
+/* #fieldSizer's own box is resized in JS to match the *visual* (zoomed)
+   footprint of #field, so #work's scrollbars/scroll range always match what
+   you actually see; #field itself keeps its natural 1750x1050 coordinate
+   space (module x/y, port and cable math are all in these units) and is
+   just visually scaled on top of that reserved space. */
+#fieldSizer {
   position: relative;
+}
+#field {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 1750px;
   height: 1050px;
+  transform-origin: 0 0;
   background-image: radial-gradient(circle, #1d2233 1px, transparent 1.2px);
   background-size: 26px 26px;
 }
@@ -234,16 +251,16 @@ select {
   padding: 6px 8px 7px;
   border-top: 1px solid var(--panel-edge);
 }
-.pgroup { display: flex; gap: 9px; }
+.pgroup { display: flex; gap: 12px; }
 .pwrap { display: flex; flex-direction: column; align-items: center; gap: 2px; }
 .pwrap span { font-size: 8.5px; color: var(--dim); letter-spacing: 0.04em; }
 
 .port {
-  width: 15px;
-  height: 15px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   background: #0a0c13;
-  border: 2.5px solid var(--audio);
+  border: 3px solid var(--audio);
   cursor: crosshair;
   touch-action: none;
 }
@@ -320,6 +337,44 @@ select {
   border: 1px solid var(--panel-edge);
   border-radius: 5px;
 }
+
+/* ---------- zoom control ---------- */
+#zoomCtl {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  background: var(--panel);
+  border: 1px solid var(--panel-edge);
+  border-radius: 999px;
+  padding: 3px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+}
+#zoomCtl button {
+  font: inherit;
+  color: var(--ink);
+  background: none;
+  border: 0;
+  cursor: pointer;
+  line-height: 1;
+}
+#zoomOut, #zoomIn {
+  width: 34px;
+  height: 34px;
+  font-size: 19px;
+  border-radius: 50%;
+}
+#zoomOut:hover, #zoomIn:hover { background: var(--panel-edge); }
+#zoomReset {
+  font-size: 11px;
+  color: var(--dim);
+  padding: 0 8px;
+  min-width: 42px;
+}
+#zoomReset:hover { color: var(--ink); }
 
 /* ---------- toast ---------- */
 #toast {

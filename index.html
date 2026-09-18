@@ -26,8 +26,15 @@
     </header>
 
     <div id="work">
-      <div id="field">
-        <svg id="cables" aria-hidden="true"></svg>
+      <div id="fieldSizer">
+        <div id="field">
+          <svg id="cables" aria-hidden="true"></svg>
+        </div>
+      </div>
+      <div id="zoomCtl" aria-label="zoom">
+        <button id="zoomOut" title="zoom out">−</button>
+        <button id="zoomReset" title="reset zoom">100%</button>
+        <button id="zoomIn" title="zoom in">+</button>
       </div>
     </div>
 
@@ -41,6 +48,7 @@
           <li><b>Drag knobs</b> up/down to turn them (hold <b>shift</b> for fine control), double-click to reset.</li>
           <li>On the <b>sequencer</b>: click a step to mute/unmute it, drag a step up/down to change its note.</li>
           <li>Drag a module by its title to move it; <b>×</b> removes it.</li>
+          <li>Use the <b>−</b>/<b>+</b> in the corner to zoom the whole board out or in — handy for seeing more of a big patch on a phone.</li>
           <li>No sound? Something needs to be cabled into the <b>speaker</b>, and on iPhone the silent switch mutes web audio — flip it and raise the media volume.</li>
         </ul>
         <p class="tips">Ideas: envelope → amp <i>cv</i> makes plucks · lfo → filter <i>cut</i> makes wobble · a sequencer's <i>gate</i> into another sequencer's <i>clock</i> chains rhythms.</p>

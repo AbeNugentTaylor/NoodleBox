@@ -65,8 +65,36 @@ let playing = false;
 let uid = 0;
 
 const field = document.getElementById("field");
+const fieldSizer = document.getElementById("fieldSizer");
+const work = document.getElementById("work");
 const svg = document.getElementById("cables");
 const CABLE_COLOR = { audio: "#6ee7ff", gate: "#ffb066" };
+
+/* board zoom: #field keeps its native 1750x1050 coordinate space (module
+   x/y, port and cable math all live there) and is just visually scaled;
+   #fieldSizer's own box is resized to match so #work's scroll range lines
+   up with what's actually on screen. Everything that reads real pointer
+   coordinates against #field has to divide by `zoom` to land back in that
+   native space — see portCenter, moveWire, bindModuleDrag, and the palette
+   "+module" placement below. */
+const ZOOM_MIN = 0.35, ZOOM_MAX = 1.25;
+let zoom = clamp(window.innerWidth / 900, ZOOM_MIN, 1);
+function setZoom(z, anchorClientX, anchorClientY) {
+  const wr = work.getBoundingClientRect();
+  const ax = anchorClientX != null ? anchorClientX - wr.left : wr.width / 2;
+  const ay = anchorClientY != null ? anchorClientY - wr.top : wr.height / 2;
+  // the local-space point currently under the anchor, so we can keep it
+  // under the same screen position after the zoom changes (no jarring jump)
+  const localX = (work.scrollLeft + ax) / zoom;
+  const localY = (work.scrollTop + ay) / zoom;
+  zoom = clamp(z, ZOOM_MIN, ZOOM_MAX);
+  field.style.transform = `scale(${zoom})`;
+  fieldSizer.style.width = 1750 * zoom + "px";
+  fieldSizer.style.height = 1050 * zoom + "px";
+  work.scrollLeft = localX * zoom - ax;
+  work.scrollTop = localY * zoom - ay;
+  zoomReset.textContent = Math.round(zoom * 100) + "%";
+}
 
 /* step clocks (seq + arp): eighth notes at the module's tempo */
 const stepDur = (m) => 60 / knobVal(m, "tempo") / 2;
@@ -658,20 +686,24 @@ function removeModule(m) {
 }
 
 function bindModuleDrag(m, el, head) {
-  let px = 0, py = 0, held = false;
+  let x0 = 0, y0 = 0, mx0 = 0, my0 = 0, held = false;
   head.addEventListener("pointerdown", (e) => {
     if (e.target.closest("button")) return;
     e.preventDefault();
     head.setPointerCapture(e.pointerId);
     held = true;
-    px = e.clientX - m.x;
-    py = e.clientY - m.y;
+    x0 = e.clientX;
+    y0 = e.clientY;
+    mx0 = m.x;
+    my0 = m.y;
     el.classList.add("dragging");
   });
   head.addEventListener("pointermove", (e) => {
     if (!held) return;
-    m.x = clamp(e.clientX - px, 0, field.clientWidth - 60);
-    m.y = clamp(e.clientY - py, 0, field.clientHeight - 40);
+    // pointer deltas are real screen pixels; #field's own x/y units aren't,
+    // so scale the delta back down to field-space before moving the module
+    m.x = clamp(mx0 + (e.clientX - x0) / zoom, 0, field.clientWidth - 60);
+    m.y = clamp(my0 + (e.clientY - y0) / zoom, 0, field.clientHeight - 40);
     el.style.left = m.x + "px";
     el.style.top = m.y + "px";
     redrawConnsOf(m);
@@ -686,7 +718,9 @@ function bindModuleDrag(m, el, head) {
 function portCenter(port) {
   const r = port.el.getBoundingClientRect();
   const f = field.getBoundingClientRect();
-  return [r.left + r.width / 2 - f.left, r.top + r.height / 2 - f.top];
+  // getBoundingClientRect is in real screen pixels; the SVG cables live
+  // inside #field's own (unscaled) coordinate space, so divide out the zoom
+  return [(r.left + r.width / 2 - f.left) / zoom, (r.top + r.height / 2 - f.top) / zoom];
 }
 function cablePath(x1, y1, x2, y2) {
   const sag = Math.min(90, Math.hypot(x2 - x1, y2 - y1) * 0.35) + 16;
@@ -792,7 +826,7 @@ function moveWire(e) {
   if (!dragWire) return;
   const f = field.getBoundingClientRect();
   const [x1, y1] = portCenter(dragWire.src);
-  dragWire.path.setAttribute("d", cablePath(x1, y1, e.clientX - f.left, e.clientY - f.top));
+  dragWire.path.setAttribute("d", cablePath(x1, y1, (e.clientX - f.left) / zoom, (e.clientY - f.top) / zoom));
 }
 function dropWire(e) {
   if (!dragWire) return;
@@ -1126,12 +1160,18 @@ for (const t of PALETTE_ORDER) {
   b.textContent = "+ " + TYPES[t].title;
   b.style.setProperty("--mc", TYPES[t].color);
   b.addEventListener("click", () => {
-    const wk = document.getElementById("work");
-    addModule(t, wk.scrollLeft + 60 + Math.random() * 120, wk.scrollTop + 80 + Math.random() * 120);
+    addModule(t, work.scrollLeft / zoom + 60 + Math.random() * 120, work.scrollTop / zoom + 80 + Math.random() * 120);
     saveSoon();
   });
   palette.appendChild(b);
 }
+
+const zoomOut = document.getElementById("zoomOut");
+const zoomIn = document.getElementById("zoomIn");
+const zoomReset = document.getElementById("zoomReset");
+zoomOut.addEventListener("click", () => setZoom(zoom - 0.15));
+zoomIn.addEventListener("click", () => setZoom(zoom + 0.15));
+zoomReset.addEventListener("click", () => setZoom(1));
 
 document.querySelectorAll("[data-preset]").forEach((b) => {
   b.addEventListener("click", () => {
@@ -1152,9 +1192,11 @@ help.addEventListener("click", (e) => { if (e.target === help) help.hidden = tru
 
 window.addEventListener("resize", redrawAll);
 window.addEventListener("load", redrawAll);
-document.getElementById("work").addEventListener("scroll", redrawAll);
+work.addEventListener("scroll", redrawAll);
 
 /* ---------------- boot ---------------- */
+
+setZoom(zoom); // apply the width-based starting zoom picked above
 
 let saved = null;
 try { saved = JSON.parse(localStorage.getItem(SAVE_KEY)); } catch (e) {}
