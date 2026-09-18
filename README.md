@@ -13,10 +13,18 @@ dependencies, three files.
   distortion, reverb, and a speaker with a live oscilloscope and a soft
   safety limiter.
 - **Cables** come in two kinds. Cyan jacks carry audio/CV as real
-  AudioNode → AudioNode/AudioParam connections, so anything can modulate
-  anything. Orange jacks carry gate/trigger events as JS callbacks with
-  pre-scheduled audio-clock timestamps, so envelopes and chained clocks
-  stay sample-accurate.
+  AudioNode → AudioNode/AudioParam connections; orange jacks carry
+  gate/trigger events as JS callbacks with pre-scheduled audio-clock
+  timestamps, so envelopes and chained clocks stay sample-accurate. Not
+  every cyan-to-cyan pairing is worth making, though: a "cv" output (a
+  sequencer/arpeggiator's `pitch`, a plain Hz value with no waveform in
+  it) plugged straight into a "strict" input (the plain audio-in jack of
+  amp/filter/delay/dist/verb/the speaker — anything that just passes a
+  signal through) is a dead end, since there's nothing there for it to
+  pass through. `portsCompatible()` in `script.js` encodes exactly that
+  rule, and it's what decides which jacks light up as you drag a cable
+  and which drop is actually accepted — true modulation jacks (`fm`,
+  `cut`, `cv`, an oscillator's `pitch`) still take either a wave or a CV.
 - The **sequencer** and **arpeggiator** run tiny lookahead schedulers
   against `AudioContext.currentTime`; each has a clock input so one can
   drive another (polyrhythms). Click a step to mute it, drag it to change

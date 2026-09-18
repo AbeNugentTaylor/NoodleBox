@@ -145,7 +145,7 @@ const TYPES = {
       { id: "rel", label: "release", min: 0.01, max: 6, curve: "log", v0: 0.3, fmt: fS },
     ],
     ins: [{ id: "gate", kind: "gate" }],
-    outs: [{ id: "out", kind: "audio" }],
+    outs: [{ id: "out", kind: "audio", role: "cv" }],
     create(m) {
       const cs = AC.createConstantSource();
       cs.offset.value = 0;
@@ -172,7 +172,7 @@ const TYPES = {
   amp: {
     title: "amp", color: "#7cffb2",
     knobs: [{ id: "level", label: "level", min: 0, max: 1, curve: "lin", v0: 0.7, fmt: fPct }],
-    ins: [{ id: "in", kind: "audio" }, { id: "cv", kind: "audio" }],
+    ins: [{ id: "in", kind: "audio", strict: true }, { id: "cv", kind: "audio" }],
     outs: [{ id: "out", kind: "audio" }],
     create(m) {
       const g = AC.createGain();
@@ -191,7 +191,7 @@ const TYPES = {
       { id: "res", label: "res", min: 0, max: 20, curve: "sq", v0: 2, fmt: fNum },
       { id: "mod", label: "mod amt", min: 0, max: 8000, curve: "cu", v0: 0, fmt: fHz },
     ],
-    ins: [{ id: "in", kind: "audio" }, { id: "cut", kind: "audio" }],
+    ins: [{ id: "in", kind: "audio", strict: true }, { id: "cut", kind: "audio" }],
     outs: [{ id: "out", kind: "audio" }],
     create(m) {
       const f = AC.createBiquadFilter();
@@ -237,7 +237,7 @@ const TYPES = {
       { id: "glide", label: "glide", min: 0, max: 0.4, curve: "cu", v0: 0, fmt: fS },
     ],
     ins: [{ id: "clock", kind: "gate" }],
-    outs: [{ id: "pitch", kind: "audio" }, { id: "gate", kind: "gate" }],
+    outs: [{ id: "pitch", kind: "audio", role: "cv" }, { id: "gate", kind: "gate" }],
     create(m) {
       const cs = AC.createConstantSource();
       cs.offset.value = 0;
@@ -289,7 +289,7 @@ const TYPES = {
       { id: "gate", label: "gate len", min: 0.05, max: 0.95, curve: "lin", v0: 0.5, fmt: fPct },
     ],
     ins: [{ id: "clock", kind: "gate" }],
-    outs: [{ id: "pitch", kind: "audio" }, { id: "gate", kind: "gate" }],
+    outs: [{ id: "pitch", kind: "audio", role: "cv" }, { id: "gate", kind: "gate" }],
     create(m) {
       const cs = AC.createConstantSource();
       cs.offset.value = 0;
@@ -337,7 +337,7 @@ const TYPES = {
       { id: "fb", label: "feedback", min: 0, max: 0.9, curve: "lin", v0: 0.35, fmt: fPct },
       { id: "mix", label: "mix", min: 0, max: 1, curve: "lin", v0: 0.35, fmt: fPct },
     ],
-    ins: [{ id: "in", kind: "audio" }],
+    ins: [{ id: "in", kind: "audio", strict: true }],
     outs: [{ id: "out", kind: "audio" }],
     create(m) {
       const inG = AC.createGain(), outG = AC.createGain(), wet = AC.createGain(), fb = AC.createGain();
@@ -365,7 +365,7 @@ const TYPES = {
       { id: "drive", label: "drive", min: 1, max: 60, curve: "log", v0: 8, fmt: fNum },
       { id: "level", label: "level", min: 0, max: 1, curve: "lin", v0: 0.6, fmt: fPct },
     ],
-    ins: [{ id: "in", kind: "audio" }],
+    ins: [{ id: "in", kind: "audio", strict: true }],
     outs: [{ id: "out", kind: "audio" }],
     create(m) {
       const pre = AC.createGain(), post = AC.createGain();
@@ -394,7 +394,7 @@ const TYPES = {
       { id: "size", label: "size", min: 0.3, max: 5, curve: "log", v0: 2, fmt: fS },
       { id: "mix", label: "mix", min: 0, max: 1, curve: "lin", v0: 0.3, fmt: fPct },
     ],
-    ins: [{ id: "in", kind: "audio" }],
+    ins: [{ id: "in", kind: "audio", strict: true }],
     outs: [{ id: "out", kind: "audio" }],
     create(m) {
       const inG = AC.createGain(), outG = AC.createGain(), wet = AC.createGain();
@@ -421,7 +421,7 @@ const TYPES = {
   out: {
     title: "speaker", color: "#e8ecff",
     knobs: [{ id: "vol", label: "volume", min: 0, max: 1, curve: "lin", v0: 0.8, fmt: fPct }],
-    ins: [{ id: "in", kind: "audio" }],
+    ins: [{ id: "in", kind: "audio", strict: true }],
     outs: [],
     create(m) {
       const g = AC.createGain();
@@ -623,7 +623,7 @@ function addModule(type, x, y) {
       wrap.className = "pwrap";
       const j = document.createElement("div");
       j.className = `port ${dir} ${p.kind}`;
-      const port = { m, id: p.id, dir, kind: p.kind, el: j };
+      const port = { m, id: p.id, dir, kind: p.kind, role: p.role, strict: p.strict, el: j };
       m.portEls[dir + ":" + p.id] = port;
       j.addEventListener("pointerdown", (e) => portDown(e, port));
       wrap.appendChild(j);
@@ -693,9 +693,24 @@ function cablePath(x1, y1, x2, y2) {
   return `M ${x1} ${y1} C ${x1} ${y1 + sag}, ${x2} ${y2 + sag}, ${x2} ${y2}`;
 }
 
+/* Same-kind isn't the whole story on cyan jacks: a "cv" output (a plain Hz
+   value like a sequencer's pitch, or an envelope's 0-1 shape) has no
+   waveform in it, so it's a dead end at a "strict" input — the plain
+   audio-in jack of anything that just passes a signal through (amp, filter,
+   delay, distortion, reverb, the speaker). Everything else — the actual
+   modulation jacks (fm, cut, cv) and an oscillator's pitch input — is happy
+   to take either an audio-rate wave or a slow CV, so both stay wide open. */
+function portsCompatible(a, b) {
+  if (a.kind !== b.kind || a.dir === b.dir) return false;
+  if (a.kind !== "audio") return true;
+  const outp = a.dir === "out" ? a : b;
+  const inp = a.dir === "out" ? b : a;
+  return !inp.strict || (outp.role || "signal") === "signal";
+}
+
 function connect(a, b) {
   if (a.dir !== "out") [a, b] = [b, a];
-  if (a.dir !== "out" || b.dir !== "in" || a.kind !== b.kind) return;
+  if (a.dir !== "out" || b.dir !== "in" || !portsCompatible(a, b)) return;
   if (conns.some((c) => c.a === a && c.b === b)) return;
   if (a.kind === "audio") {
     const target = b.m.inT[b.id];
@@ -762,10 +777,11 @@ function portDown(e, port) {
   path.setAttribute("opacity", "0.9");
   svg.appendChild(path);
   dragWire = { src, path };
+  field.classList.add("cabling");
   for (const m of modules) {
     for (const key in m.portEls) {
       const p = m.portEls[key];
-      if (p.kind === src.kind && p.dir !== src.dir) p.el.classList.add("want");
+      if (portsCompatible(src, p)) p.el.classList.add("want");
     }
   }
   moveWire(e);
@@ -787,7 +803,7 @@ function dropWire(e) {
     for (const m of modules) {
       for (const key in m.portEls) {
         const p = m.portEls[key];
-        if (p.el === jack && p.kind === dragWire.src.kind && p.dir !== dragWire.src.dir) {
+        if (p.el === jack && portsCompatible(dragWire.src, p)) {
           connect(dragWire.src, p);
           break outer;
         }
@@ -796,6 +812,7 @@ function dropWire(e) {
   }
   dragWire.path.remove();
   dragWire = null;
+  field.classList.remove("cabling");
   document.querySelectorAll(".port.want").forEach((p) => p.classList.remove("want"));
   window.removeEventListener("pointermove", moveWire);
   window.removeEventListener("pointerup", dropWire);
