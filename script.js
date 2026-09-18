@@ -129,8 +129,11 @@ const TYPES = {
       { id: "freq", label: "freq", min: 0, max: 2000, curve: "sq", v0: 110, fmt: fHz },
       { id: "fm", label: "fm amt", min: 0, max: 2000, curve: "cu", v0: 0, fmt: fHz },
     ],
-    ins: [{ id: "pitch", kind: "audio" }, { id: "fm", kind: "audio" }],
-    outs: [{ id: "out", kind: "audio" }],
+    ins: [
+      { id: "pitch", kind: "audio", help: "sets the oscillator's frequency in Hz — feed it a sequencer or arpeggio's pitch output to play notes." },
+      { id: "fm", kind: "audio", help: "modulates frequency for vibrato or metallic tones — turn up the “fm amt” knob to hear it." },
+    ],
+    outs: [{ id: "out", kind: "audio", help: "the oscillator's raw waveform." }],
     create(m) {
       const o = AC.createOscillator();
       o.frequency.value = 0;
@@ -151,7 +154,7 @@ const TYPES = {
     selects: [{ id: "wave", opts: ["sine", "triangle", "sawtooth", "square"], v0: "sine" }],
     knobs: [{ id: "rate", label: "rate", min: 0.02, max: 30, curve: "log", v0: 2, fmt: fHz }],
     ins: [],
-    outs: [{ id: "out", kind: "audio" }],
+    outs: [{ id: "out", kind: "audio", help: "a slow, repeating wave (set by “rate”) — plug it into a knob's CV jack to wobble that parameter." }],
     create(m) {
       const o = AC.createOscillator();
       o.frequency.value = 2;
@@ -172,8 +175,8 @@ const TYPES = {
       { id: "sus", label: "sustain", min: 0, max: 1, curve: "lin", v0: 0.4, fmt: fPct },
       { id: "rel", label: "release", min: 0.01, max: 6, curve: "log", v0: 0.3, fmt: fS },
     ],
-    ins: [{ id: "gate", kind: "gate" }],
-    outs: [{ id: "out", kind: "audio", role: "cv" }],
+    ins: [{ id: "gate", kind: "gate", help: "triggers the envelope's attack/decay/sustain/release — feed it a sequencer or arpeggio's gate output." }],
+    outs: [{ id: "out", kind: "audio", role: "cv", help: "a CV shape from 0 to 1 — use it to modulate amplitude, cutoff, or pitch." }],
     create(m) {
       const cs = AC.createConstantSource();
       cs.offset.value = 0;
@@ -200,8 +203,11 @@ const TYPES = {
   amp: {
     title: "amp", color: "#7cffb2",
     knobs: [{ id: "level", label: "level", min: 0, max: 1, curve: "lin", v0: 0.7, fmt: fPct }],
-    ins: [{ id: "in", kind: "audio", strict: true }, { id: "cv", kind: "audio" }],
-    outs: [{ id: "out", kind: "audio" }],
+    ins: [
+      { id: "in", kind: "audio", strict: true, help: "the signal to amplify — needs an actual waveform, not a CV." },
+      { id: "cv", kind: "audio", help: "modulates the volume directly and fully — feed an envelope for plucks, an LFO for tremolo." },
+    ],
+    outs: [{ id: "out", kind: "audio", help: "the amplified signal." }],
     create(m) {
       const g = AC.createGain();
       m.n = { g };
@@ -219,8 +225,11 @@ const TYPES = {
       { id: "res", label: "res", min: 0, max: 20, curve: "sq", v0: 2, fmt: fNum },
       { id: "mod", label: "mod amt", min: 0, max: 8000, curve: "cu", v0: 0, fmt: fHz },
     ],
-    ins: [{ id: "in", kind: "audio", strict: true }, { id: "cut", kind: "audio" }],
-    outs: [{ id: "out", kind: "audio" }],
+    ins: [
+      { id: "in", kind: "audio", strict: true, help: "the signal to filter — needs an actual waveform, not a CV." },
+      { id: "cut", kind: "audio", help: "modulates the cutoff frequency — turn up “mod amt” to hear it; try an LFO for wobble or an envelope for a sweep." },
+    ],
+    outs: [{ id: "out", kind: "audio", help: "the filtered signal." }],
     create(m) {
       const f = AC.createBiquadFilter();
       const mg = AC.createGain();
@@ -242,7 +251,7 @@ const TYPES = {
     title: "noise", color: "#aab6d6",
     knobs: [{ id: "level", label: "level", min: 0, max: 1, curve: "sq", v0: 0.5, fmt: fPct }],
     ins: [],
-    outs: [{ id: "out", kind: "audio" }],
+    outs: [{ id: "out", kind: "audio", help: "steady white noise, shaped by the “level” knob." }],
     create(m) {
       const src = AC.createBufferSource();
       src.buffer = whiteNoiseBuffer(2);
@@ -264,8 +273,11 @@ const TYPES = {
       { id: "gate", label: "gate len", min: 0.05, max: 0.95, curve: "lin", v0: 0.6, fmt: fPct },
       { id: "glide", label: "glide", min: 0, max: 0.4, curve: "cu", v0: 0, fmt: fS },
     ],
-    ins: [{ id: "clock", kind: "gate" }],
-    outs: [{ id: "pitch", kind: "audio", role: "cv" }, { id: "gate", kind: "gate" }],
+    ins: [{ id: "clock", kind: "gate", help: "an external gate that advances the sequencer a step, instead of its own internal tempo." }],
+    outs: [
+      { id: "pitch", kind: "audio", role: "cv", help: "the current step's note, as a Hz value — feed it into an oscillator's pitch input." },
+      { id: "gate", kind: "gate", help: "fires once per active step, timed by the “gate len” knob." },
+    ],
     create(m) {
       const cs = AC.createConstantSource();
       cs.offset.value = 0;
@@ -316,8 +328,11 @@ const TYPES = {
       { id: "oct", label: "octaves", min: 1, max: 3, curve: "lin", step: 1, v0: 2, fmt: fInt },
       { id: "gate", label: "gate len", min: 0.05, max: 0.95, curve: "lin", v0: 0.5, fmt: fPct },
     ],
-    ins: [{ id: "clock", kind: "gate" }],
-    outs: [{ id: "pitch", kind: "audio", role: "cv" }, { id: "gate", kind: "gate" }],
+    ins: [{ id: "clock", kind: "gate", help: "an external gate that advances the arpeggio a step, instead of its own internal tempo." }],
+    outs: [
+      { id: "pitch", kind: "audio", role: "cv", help: "the current note, as a Hz value — feed it into an oscillator's pitch input." },
+      { id: "gate", kind: "gate", help: "fires for each note in the pattern, timed by the “gate len” knob." },
+    ],
     create(m) {
       const cs = AC.createConstantSource();
       cs.offset.value = 0;
@@ -365,8 +380,8 @@ const TYPES = {
       { id: "fb", label: "feedback", min: 0, max: 0.9, curve: "lin", v0: 0.35, fmt: fPct },
       { id: "mix", label: "mix", min: 0, max: 1, curve: "lin", v0: 0.35, fmt: fPct },
     ],
-    ins: [{ id: "in", kind: "audio", strict: true }],
-    outs: [{ id: "out", kind: "audio" }],
+    ins: [{ id: "in", kind: "audio", strict: true, help: "the signal to delay." }],
+    outs: [{ id: "out", kind: "audio", help: "dry signal plus the delayed repeats." }],
     create(m) {
       const inG = AC.createGain(), outG = AC.createGain(), wet = AC.createGain(), fb = AC.createGain();
       const dl = AC.createDelay(2);
@@ -393,8 +408,8 @@ const TYPES = {
       { id: "drive", label: "drive", min: 1, max: 60, curve: "log", v0: 8, fmt: fNum },
       { id: "level", label: "level", min: 0, max: 1, curve: "lin", v0: 0.6, fmt: fPct },
     ],
-    ins: [{ id: "in", kind: "audio", strict: true }],
-    outs: [{ id: "out", kind: "audio" }],
+    ins: [{ id: "in", kind: "audio", strict: true, help: "the signal to distort." }],
+    outs: [{ id: "out", kind: "audio", help: "the distorted signal." }],
     create(m) {
       const pre = AC.createGain(), post = AC.createGain();
       const sh = AC.createWaveShaper();
@@ -422,8 +437,8 @@ const TYPES = {
       { id: "size", label: "size", min: 0.3, max: 5, curve: "log", v0: 2, fmt: fS },
       { id: "mix", label: "mix", min: 0, max: 1, curve: "lin", v0: 0.3, fmt: fPct },
     ],
-    ins: [{ id: "in", kind: "audio", strict: true }],
-    outs: [{ id: "out", kind: "audio" }],
+    ins: [{ id: "in", kind: "audio", strict: true, help: "the signal to add reverb to." }],
+    outs: [{ id: "out", kind: "audio", help: "dry signal plus the reverb tail." }],
     create(m) {
       const inG = AC.createGain(), outG = AC.createGain(), wet = AC.createGain();
       const cv = AC.createConvolver();
@@ -449,7 +464,7 @@ const TYPES = {
   out: {
     title: "speaker", color: "#e8ecff",
     knobs: [{ id: "vol", label: "volume", min: 0, max: 1, curve: "lin", v0: 0.8, fmt: fPct }],
-    ins: [{ id: "in", kind: "audio", strict: true }],
+    ins: [{ id: "in", kind: "audio", strict: true, help: "plug the end of your patch in here to actually hear it." }],
     outs: [],
     create(m) {
       const g = AC.createGain();
@@ -681,7 +696,7 @@ function addModule(type, x, y) {
       wrap.className = "pwrap";
       const j = document.createElement("div");
       j.className = `port ${dir} ${p.kind}`;
-      const port = { m, id: p.id, dir, kind: p.kind, role: p.role, strict: p.strict, el: j };
+      const port = { m, id: p.id, dir, kind: p.kind, role: p.role, strict: p.strict, help: p.help, el: j };
       m.portEls[dir + ":" + p.id] = port;
       j.addEventListener("pointerdown", (e) => portDown(e, port));
       wrap.appendChild(j);
@@ -848,7 +863,50 @@ function redrawConnsOf(m) { for (const c of conns) if (c.a.m === m || c.b.m === 
 function redrawAll() { for (const c of conns) redrawConn(c); }
 
 /* dragging a new cable */
-let dragWire = null; // {src, path}
+let dragWire = null; // {src, path, x0, y0, tappedPort}
+let armedPort = null; // a port tapped (not dragged) and awaiting a second tap to land a cable on
+
+function showPortHelp(p) {
+  if (!p.help) return;
+  const title = TYPES[p.m.type].title;
+  toast(title.charAt(0).toUpperCase() + title.slice(1) + ' “' + p.id + '” — ' + p.help, 6000);
+}
+function clearArmed() {
+  if (armedPort) armedPort.el.classList.remove("armed");
+  armedPort = null;
+  field.classList.remove("cabling");
+  document.querySelectorAll(".port.want").forEach((p) => p.classList.remove("want"));
+}
+function armPort(p) {
+  clearArmed();
+  armedPort = p;
+  p.el.classList.add("armed");
+  field.classList.add("cabling");
+  for (const m of modules) {
+    for (const key in m.portEls) {
+      const cand = m.portEls[key];
+      if (portsCompatible(p, cand)) cand.el.classList.add("want");
+    }
+  }
+}
+/* A tap (as opposed to a drag) on a port is the second way to run a cable —
+   easier to land precisely on a touchscreen than a drag. Tapping shows what
+   the jack does either way; tapping a second, compatible jack completes the
+   connection, tapping the same jack again cancels, and tapping some other
+   incompatible jack just re-arms from there instead of doing nothing. */
+function handleTap(tappedPort, src) {
+  showPortHelp(tappedPort);
+  if (armedPort === src) { clearArmed(); saveSoon(); return; }
+  if (armedPort && portsCompatible(armedPort, tappedPort)) {
+    connect(armedPort, tappedPort);
+    clearArmed();
+    saveSoon();
+    return;
+  }
+  armPort(src);
+  saveSoon(); // in case an already-plugged input just got picked up above
+}
+
 function portDown(e, port) {
   e.preventDefault();
   e.stopPropagation();
@@ -864,7 +922,7 @@ function portDown(e, port) {
   path.setAttribute("fill", "none");
   path.setAttribute("opacity", "0.9");
   svg.appendChild(path);
-  dragWire = { src, path };
+  dragWire = { src, path, x0: e.clientX, y0: e.clientY, tappedPort: port };
   field.classList.add("cabling");
   for (const m of modules) {
     for (const key in m.portEls) {
@@ -884,6 +942,21 @@ function moveWire(e) {
 }
 function dropWire(e) {
   if (!dragWire) return;
+  const { src, x0, y0, tappedPort, path } = dragWire;
+  const moved = Math.hypot(e.clientX - x0, e.clientY - y0) > 6;
+
+  path.remove();
+  document.querySelectorAll(".port.want").forEach((p) => p.classList.remove("want"));
+  field.classList.remove("cabling");
+  window.removeEventListener("pointermove", moveWire);
+  window.removeEventListener("pointerup", dropWire);
+  dragWire = null;
+
+  if (!moved) {
+    handleTap(tappedPort, src); // resolves armed/want/cabling state on every branch
+    return;
+  }
+
   const el = document.elementFromPoint(e.clientX, e.clientY);
   const jack = el && el.closest && el.closest(".port");
   if (jack) {
@@ -891,21 +964,19 @@ function dropWire(e) {
     for (const m of modules) {
       for (const key in m.portEls) {
         const p = m.portEls[key];
-        if (p.el === jack && portsCompatible(dragWire.src, p)) {
-          connect(dragWire.src, p);
+        if (p.el === jack && portsCompatible(src, p)) {
+          connect(src, p);
           break outer;
         }
       }
     }
   }
-  dragWire.path.remove();
-  dragWire = null;
-  field.classList.remove("cabling");
-  document.querySelectorAll(".port.want").forEach((p) => p.classList.remove("want"));
-  window.removeEventListener("pointermove", moveWire);
-  window.removeEventListener("pointerup", dropWire);
+  clearArmed(); // a completed drag supersedes any earlier tap-armed port
   saveSoon();
 }
+document.addEventListener("pointerdown", (e) => {
+  if (armedPort && !e.target.closest(".port")) clearArmed();
+}, true);
 
 /* ---------------- transport ---------------- */
 

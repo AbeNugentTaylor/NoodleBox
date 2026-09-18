@@ -289,10 +289,13 @@ select {
   from { box-shadow: 0 0 3px currentColor; }
   to { box-shadow: 0 0 11px 2px currentColor; }
 }
-/* while a cable is being dragged, only jacks it can actually land on stay
-   at full strength — everything else fades back so the valid targets are
-   the obvious ones, not something you have to already know */
-#field.cabling .port:not(.want) { opacity: 0.3; transition: opacity 0.15s; }
+/* while a cable is being dragged or a tap has staged one, only jacks it can
+   actually land on (or the staged jack itself) stay at full strength —
+   everything else fades back so the valid targets are the obvious ones,
+   not something you have to already know */
+#field.cabling .port:not(.want):not(.armed) { opacity: 0.3; transition: opacity 0.15s; }
+/* a tapped-and-staged port, waiting on a second tap to land a cable */
+.port.armed { background: currentColor; box-shadow: 0 0 10px currentColor; }
 .port.audio { color: var(--audio); }
 .port.gate { color: var(--gate); }
 

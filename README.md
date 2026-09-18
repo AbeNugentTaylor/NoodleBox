@@ -25,6 +25,14 @@ dependencies, three files.
   rule, and it's what decides which jacks light up as you drag a cable
   and which drop is actually accepted — true modulation jacks (`fm`,
   `cut`, `cv`, an oscillator's `pitch`) still take either a wave or a CV.
+  Every port also carries a one-line `help` string (in `TYPES`) describing
+  what it does; tapping a jack without dragging shows it in a toast and
+  (a friendlier touch-target alternative to dragging) arms that jack —
+  tap a second, compatible jack to land the cable there, tap the same
+  jack again to back out, or tap any other jack to re-arm from there
+  instead. `armedPort`/`handleTap()` in `script.js` run that state
+  machine; an actual drag (movement past a small threshold) still works
+  exactly as it always has and isn't affected by anything armed.
 - The **sequencer** and **arpeggiator** run tiny lookahead schedulers
   against `AudioContext.currentTime`; each has a clock input so one can
   drive another (polyrhythms). Click a step to mute it, drag it to change
