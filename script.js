@@ -897,6 +897,34 @@ setInterval(() => {
   for (const m of modules) if (m.tick) m.tick();
 }, 30);
 
+/* Catch a common silent-patch cause: a control-voltage output (a sequencer's
+   or arpeggio's pitch, say — a plain Hz value, not a ±1 waveform) wired
+   straight into an audio jack with no oscillator in between to turn it into
+   an actual wave. It's genuinely connected, but the value is wildly outside
+   normal audio range, so the speaker's safety limiter clamps it to a flat
+   non-oscillating ceiling — connected, yet nothing to hear. Flag it: a real
+   (even loud/clipped) signal always swings between its analyser extremes
+   over any short window; a pinned, unmoving value away from center doesn't. */
+let pinnedStreak = 0, pinnedWarned = false;
+const pinBuf = new Uint8Array(256);
+setInterval(() => {
+  if (!playing) { pinnedStreak = 0; pinnedWarned = false; return; }
+  const speakers = modules.filter((m) => m.type === "out" && hasConnTo(m, "in"));
+  if (!speakers.length) { pinnedStreak = 0; return; }
+  const stuck = speakers.every((m) => {
+    m.n.an.getByteTimeDomainData(pinBuf);
+    let min = 255, max = 0;
+    for (const b of pinBuf) { if (b < min) min = b; if (b > max) max = b; }
+    return max - min <= 2 && Math.abs((max + min) / 2 - 128) > 40;
+  });
+  if (!stuck) { pinnedStreak = 0; pinnedWarned = false; return; }
+  pinnedStreak++;
+  if (pinnedStreak >= 6 && !pinnedWarned) {
+    pinnedWarned = true;
+    toast("📉 Something's overloading a jack and getting clamped flat by the safety limiter — a pitch or envelope CV wired straight into an audio input has no waveform to hear. Route it through an oscillator (or amp) first.");
+  }
+}, 250);
+
 /* scope */
 const scopeBuf = new Uint8Array(1024);
 (function drawScopes() {
