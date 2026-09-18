@@ -486,6 +486,21 @@ const TYPES = {
 
 const PALETTE_ORDER = ["osc", "lfo", "env", "amp", "filter", "seq", "arp", "noise", "delay", "dist", "verb", "out"];
 
+/* Hot-swap: two module types are drop-in replacements for each other only
+   if their ports match exactly — same ids, same kind, same cv/strict role,
+   on both ins and outs. That's true for a few natural families as-is
+   (delay/dist/verb, seq/arp, lfo/noise) without any extra bookkeeping here;
+   it's derived from TYPES so it never drifts out of sync with the port
+   declarations above. */
+function portSetSig(list) {
+  return list.map((p) => `${p.id}|${p.kind}|${p.role || ""}|${p.strict ? 1 : 0}`).sort().join(",");
+}
+function moduleSig(spec) { return portSetSig(spec.ins) + "::" + portSetSig(spec.outs); }
+const SWAP_GROUPS = {};
+for (const t of Object.keys(TYPES)) {
+  SWAP_GROUPS[t] = Object.keys(TYPES).filter((o) => o !== t && moduleSig(TYPES[o]) === moduleSig(TYPES[t]));
+}
+
 /* ---------------- knobs / selects ---------------- */
 
 function knobDef(m, id) { return m.spec.knobs.find((k) => k.id === id); }
@@ -599,6 +614,21 @@ function addModule(type, x, y) {
   const head = document.createElement("div");
   head.className = "mhead";
   head.innerHTML = `<span>${spec.title}</span>`;
+  if (SWAP_GROUPS[type].length) {
+    const swapSel = document.createElement("select");
+    swapSel.className = "swap";
+    swapSel.title = "swap for a compatible module — cables stay put";
+    swapSel.innerHTML = '<option value="">swap</option>';
+    for (const o of SWAP_GROUPS[type]) {
+      const op = document.createElement("option");
+      op.value = o;
+      op.textContent = "→ " + TYPES[o].title;
+      swapSel.appendChild(op);
+    }
+    swapSel.addEventListener("pointerdown", (e) => e.stopPropagation());
+    swapSel.addEventListener("change", () => { if (swapSel.value) swapModule(m, swapSel.value); });
+    head.appendChild(swapSel);
+  }
   const xBtn = document.createElement("button");
   xBtn.className = "mx";
   xBtn.textContent = "×";
@@ -682,6 +712,30 @@ function removeModule(m) {
   }
   m.el.remove();
   modules.splice(modules.indexOf(m), 1);
+  saveSoon();
+}
+
+/* Swap m for a same-shaped module of type newType in place: build the
+   replacement, re-point every cable that touched m onto the equivalent
+   port of the replacement (same id, guaranteed to exist by SWAP_GROUPS),
+   carry over any knob/select an id in common, then drop the original. */
+function swapModule(m, newType) {
+  if (!SWAP_GROUPS[m.type].includes(newType)) return;
+  const spec = TYPES[newType];
+  const touching = conns.filter((c) => c.a.m === m || c.b.m === m);
+  const nm = addModule(newType, m.x, m.y);
+  for (const k of spec.knobs || []) {
+    if (knobDef(m, k.id)) setKnobValue(nm, k.id, knobVal(m, k.id));
+  }
+  for (const s of spec.selects || []) {
+    const v = m.sel[s.id];
+    if (v != null && s.opts.includes(v)) setSel(nm, s.id, v);
+  }
+  for (const c of touching) {
+    connect(c.a.m === m ? port(nm, "out", c.a.id) : c.a, c.b.m === m ? port(nm, "in", c.b.id) : c.b);
+  }
+  removeModule(m);
+  redrawAll();
   saveSoon();
 }
 

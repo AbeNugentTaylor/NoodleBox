@@ -29,6 +29,16 @@ dependencies, three files.
   against `AudioContext.currentTime`; each has a clock input so one can
   drive another (polyrhythms). Click a step to mute it, drag it to change
   its note.
+- **Hot-swapping**: a module can be replaced in place by another one with
+  the exact same ports (same ids, kinds, and cv/strict roles on every in
+  and out) — `SWAP_GROUPS` in `script.js` derives this from `TYPES` itself,
+  so it never drifts out of sync with the port declarations. That's
+  delay/dist/verb, seq/arp, and lfo/noise as of this writing. Swapping
+  rebuilds the module and re-points its existing cables at the same
+  port ids on the replacement rather than dropping them, and carries over
+  any knob/select the two share an id for (e.g. delay and verb both have
+  a `mix` knob). Modules with no same-shaped sibling (osc, env, amp,
+  filter, the speaker) just don't get a swap control.
 - Patches autosave to `localStorage`; three demo patches (starter, acid,
   drift) live at the bottom of `script.js`.
 

@@ -185,6 +185,22 @@ body {
 }
 .mx:hover { color: #ff7b7b; }
 
+.mhead select.swap {
+  font: inherit;
+  font-size: 10px;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--dim);
+  background: #0e1220;
+  border: 1px solid var(--panel-edge);
+  border-radius: 5px;
+  padding: 1px 3px;
+  max-width: 56px;
+  cursor: pointer;
+}
+.mhead select.swap:hover { color: var(--ink); border-color: var(--dim); }
+
 .mbody {
   display: flex;
   flex-direction: column;
