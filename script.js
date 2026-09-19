@@ -1341,8 +1341,15 @@ function portDown(e, port) {
   e.stopPropagation();
   let src = port;
   if (port.dir === "in") {
-    const existing = conns.filter((c) => c.b === port).pop();
-    if (existing) { src = existing.a; removeConn(existing); }
+    // Grabbing an input with exactly one cable picks it up for rewiring —
+    // a nice shortcut. But an input can carry several cables at once (fan
+    // multiple drums into one speaker, say), and grabbing it then would be
+    // ambiguous about which one you meant; treat that like grabbing an
+    // empty jack instead, so the gesture adds a cable rather than yanking
+    // an arbitrary existing one. Removing one specific cable from a
+    // crowded jack is still just a click on that cable itself.
+    const existingConns = conns.filter((c) => c.b === port);
+    if (existingConns.length === 1) { src = existingConns[0].a; removeConn(existingConns[0]); }
   }
   const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
   path.setAttribute("stroke", CABLE_COLOR[src.kind]);
