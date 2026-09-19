@@ -57,6 +57,34 @@ function impulseBuffer(seconds) {
   return buf;
 }
 
+/* fuzz: hard clipping with a different threshold on each polarity -- rawer
+   and more asymmetric than dist's tanh. The two slopes are what make it
+   asymmetric, not a shifted curve: silence (x=0) always maps to silence,
+   so an idle fuzz pedal (nothing plugged into its "in") stays truly quiet
+   instead of leaking a constant DC bias into whatever it's wired to. */
+function updateFuzzCurve(m) {
+  const bias = knobVal(m, "bias");
+  const posGain = 3 * (1 + Math.max(0, bias));
+  const negGain = 3 * (1 - Math.min(0, bias));
+  const curve = new Float32Array(1024);
+  for (let i = 0; i < 1024; i++) {
+    const x = i / 511.5 - 1;
+    curve[i] = clamp(x * (x >= 0 ? posGain : negGain), -1, 1);
+  }
+  m.n.sh.curve = curve;
+}
+/* crush: quantizes amplitude to a handful of steps -- bit-depth reduction,
+   done natively with a WaveShaper instead of a ScriptProcessor/Worklet */
+function updateCrushCurve(m) {
+  const steps = Math.pow(2, Math.round(knobVal(m, "bits")));
+  const curve = new Float32Array(1024);
+  for (let i = 0; i < 1024; i++) {
+    const x = i / 511.5 - 1;
+    curve[i] = Math.round(x * steps) / steps;
+  }
+  m.n.sh.curve = curve;
+}
+
 /* ---------------- state ---------------- */
 
 const modules = [];
@@ -497,9 +525,410 @@ const TYPES = {
       body.appendChild(c);
     },
   },
+
+  /* ---- percussion: one-shot voices, all gate-in/audio-out, so they're a
+     hot-swappable family with each other (try a different drum with one
+     tap, cables stay put) ---- */
+
+  kick: {
+    title: "kick", color: "#e8555c",
+    knobs: [
+      { id: "tune", label: "tune", min: 30, max: 120, curve: "lin", v0: 55, fmt: fHz },
+      { id: "punch", label: "punch", min: 0, max: 1, curve: "lin", v0: 0.6, fmt: fPct },
+      { id: "decay", label: "decay", min: 0.05, max: 1.2, curve: "log", v0: 0.35, fmt: fS },
+    ],
+    ins: [{ id: "gate", kind: "gate", help: "triggers a kick hit." }],
+    outs: [{ id: "out", kind: "audio", help: "a synthesized kick drum thump." }],
+    create(m) {
+      const o = AC.createOscillator();
+      o.type = "sine";
+      o.frequency.value = 55;
+      o.start();
+      const g = AC.createGain();
+      g.gain.value = 0;
+      o.connect(g);
+      m.n = { o, g };
+      m.inT = {};
+      m.outN = { out: g };
+    },
+    gate(m, portId, ev) {
+      const t = Math.max(ev.t, AC.currentTime);
+      const tune = knobVal(m, "tune"), punch = knobVal(m, "punch"), decay = knobVal(m, "decay");
+      const fp = m.n.o.frequency, gp = m.n.g.gain;
+      holdParam(fp, t);
+      fp.setValueAtTime(tune + punch * 300, t);
+      fp.setTargetAtTime(tune, t, 0.025);
+      holdParam(gp, t);
+      gp.setValueAtTime(1, t);
+      gp.setTargetAtTime(0, t, decay / 4);
+    },
+  },
+
+  snare: {
+    title: "snare", color: "#f2a154",
+    knobs: [
+      { id: "tone", label: "tone", min: 100, max: 400, curve: "lin", v0: 180, fmt: fHz },
+      { id: "snap", label: "snap", min: 0, max: 1, curve: "lin", v0: 0.6, fmt: fPct },
+      { id: "decay", label: "decay", min: 0.05, max: 0.6, curve: "log", v0: 0.18, fmt: fS },
+    ],
+    ins: [{ id: "gate", kind: "gate", help: "triggers a snare hit." }],
+    outs: [{ id: "out", kind: "audio", help: "a synthesized snare: noise plus a short tonal body." }],
+    create(m) {
+      const o = AC.createOscillator();
+      o.type = "triangle";
+      o.frequency.value = 180;
+      o.start();
+      const og = AC.createGain();
+      og.gain.value = 0;
+      o.connect(og);
+      const src = AC.createBufferSource();
+      src.buffer = whiteNoiseBuffer(2);
+      src.loop = true;
+      src.start();
+      const hp = AC.createBiquadFilter();
+      hp.type = "highpass";
+      hp.frequency.value = 900;
+      const ng = AC.createGain();
+      ng.gain.value = 0;
+      src.connect(hp);
+      hp.connect(ng);
+      const out = AC.createGain();
+      og.connect(out);
+      ng.connect(out);
+      m.n = { o, og, src, hp, ng, out };
+      m.inT = {};
+      m.outN = { out };
+    },
+    gate(m, portId, ev) {
+      const t = Math.max(ev.t, AC.currentTime);
+      const tone = knobVal(m, "tone"), snap = knobVal(m, "snap"), decay = knobVal(m, "decay");
+      m.n.o.frequency.setValueAtTime(tone, t);
+      const og = m.n.og.gain, ng = m.n.ng.gain;
+      holdParam(og, t);
+      og.setValueAtTime(1 - snap, t);
+      og.setTargetAtTime(0, t, decay / 4);
+      holdParam(ng, t);
+      ng.setValueAtTime(snap, t);
+      ng.setTargetAtTime(0, t, decay / 3);
+    },
+  },
+
+  hat: {
+    title: "hihat", color: "#dfe4ee",
+    knobs: [
+      { id: "tone", label: "tone", min: 3000, max: 12000, curve: "log", v0: 7000, fmt: fHz },
+      { id: "decay", label: "decay", min: 0.02, max: 0.8, curve: "log", v0: 0.08, fmt: fS },
+    ],
+    ins: [{ id: "gate", kind: "gate", help: "triggers a hihat tick — a short decay sounds closed, a long one open." }],
+    outs: [{ id: "out", kind: "audio", help: "bright, filtered noise — a synthesized hihat." }],
+    create(m) {
+      const src = AC.createBufferSource();
+      src.buffer = whiteNoiseBuffer(2);
+      src.loop = true;
+      src.start();
+      const hp = AC.createBiquadFilter();
+      hp.type = "highpass";
+      hp.frequency.value = 7000;
+      const g = AC.createGain();
+      g.gain.value = 0;
+      src.connect(hp);
+      hp.connect(g);
+      m.n = { src, hp, g };
+      m.inT = {};
+      m.outN = { out: g };
+    },
+    knob(m, id, v) { if (id === "tone") smooth(m.n.hp.frequency, v); },
+    gate(m, portId, ev) {
+      const t = Math.max(ev.t, AC.currentTime);
+      const decay = knobVal(m, "decay");
+      const gp = m.n.g.gain;
+      holdParam(gp, t);
+      gp.setValueAtTime(1, t);
+      gp.setTargetAtTime(0, t, decay / 4);
+    },
+  },
+
+  clap: {
+    title: "clap", color: "#f0629e",
+    knobs: [
+      { id: "tone", label: "tone", min: 800, max: 3000, curve: "log", v0: 1500, fmt: fHz },
+      { id: "spread", label: "spread", min: 0.005, max: 0.05, curve: "lin", v0: 0.02, fmt: fS },
+      { id: "decay", label: "decay", min: 0.05, max: 0.6, curve: "log", v0: 0.2, fmt: fS },
+    ],
+    ins: [{ id: "gate", kind: "gate", help: "triggers a clap hit — several quick noise bursts." }],
+    outs: [{ id: "out", kind: "audio", help: "a synthesized hand-clap: layered noise bursts." }],
+    create(m) {
+      const src = AC.createBufferSource();
+      src.buffer = whiteNoiseBuffer(2);
+      src.loop = true;
+      src.start();
+      const bp = AC.createBiquadFilter();
+      bp.type = "bandpass";
+      bp.Q.value = 1.2;
+      bp.frequency.value = 1500;
+      const g = AC.createGain();
+      g.gain.value = 0;
+      src.connect(bp);
+      bp.connect(g);
+      m.n = { src, bp, g };
+      m.inT = {};
+      m.outN = { out: g };
+    },
+    knob(m, id, v) { if (id === "tone") smooth(m.n.bp.frequency, v); },
+    gate(m, portId, ev) {
+      const t = Math.max(ev.t, AC.currentTime);
+      const spread = knobVal(m, "spread"), decay = knobVal(m, "decay");
+      const p = m.n.g.gain;
+      holdParam(p, t);
+      for (let i = 0; i < 4; i++) {
+        const ti = t + i * spread;
+        p.setValueAtTime(0, ti);
+        p.linearRampToValueAtTime(0.9, ti + 0.002);
+        p.setTargetAtTime(0, ti + 0.002, decay / 6);
+      }
+    },
+  },
+
+  cymbal: {
+    title: "cymbal", color: "#e8dcae",
+    knobs: [
+      { id: "tone", label: "tone", min: 3000, max: 10000, curve: "log", v0: 5000, fmt: fHz },
+      { id: "shimmer", label: "shimmer", min: 0, max: 0.95, curve: "lin", v0: 0.5, fmt: fPct },
+      { id: "decay", label: "decay", min: 0.3, max: 3, curve: "log", v0: 1.2, fmt: fS },
+    ],
+    ins: [{ id: "gate", kind: "gate", help: "triggers a cymbal crash/wash." }],
+    outs: [{ id: "out", kind: "audio", help: "long, bright noise with a touch of metallic ring — a crash/ride cymbal." }],
+    create(m) {
+      const src = AC.createBufferSource();
+      src.buffer = whiteNoiseBuffer(2);
+      src.loop = true;
+      src.start();
+      const hp = AC.createBiquadFilter();
+      hp.type = "highpass";
+      hp.frequency.value = 5000;
+      const g = AC.createGain();
+      g.gain.value = 0;
+      const dl = AC.createDelay(0.05);
+      dl.delayTime.value = 0.004;
+      const fb = AC.createGain();
+      fb.gain.value = 0.45;
+      src.connect(hp);
+      hp.connect(g);
+      g.connect(dl);
+      dl.connect(fb);
+      fb.connect(dl);
+      const out = AC.createGain();
+      g.connect(out);
+      dl.connect(out);
+      m.n = { src, hp, g, dl, fb, out };
+      m.inT = {};
+      m.outN = { out };
+    },
+    knob(m, id, v) {
+      if (id === "tone") smooth(m.n.hp.frequency, v);
+      else if (id === "shimmer") smooth(m.n.fb.gain, v * 0.9);
+    },
+    gate(m, portId, ev) {
+      const t = Math.max(ev.t, AC.currentTime);
+      const decay = knobVal(m, "decay");
+      const gp = m.n.g.gain;
+      holdParam(gp, t);
+      gp.setValueAtTime(0.8, t);
+      gp.setTargetAtTime(0, t, decay / 4);
+    },
+  },
+
+  pluck: {
+    title: "pluck", color: "#9be89f",
+    knobs: [
+      { id: "pitch", label: "pitch", min: 36, max: 84, curve: "lin", step: 1, v0: 57, fmt: fNote },
+      { id: "damping", label: "damping", min: 800, max: 8000, curve: "log", v0: 3500, fmt: fHz },
+      { id: "decay", label: "decay", min: 0.3, max: 8, curve: "log", v0: 2, fmt: fS },
+    ],
+    ins: [{ id: "gate", kind: "gate", help: "plucks the string at the current “pitch” knob." }],
+    outs: [{ id: "out", kind: "audio", help: "a Karplus-Strong plucked string — like a harp or guitar pluck." }],
+    create(m) {
+      const src = AC.createBufferSource();
+      src.buffer = whiteNoiseBuffer(2);
+      src.loop = true;
+      const burst = AC.createGain();
+      burst.gain.value = 0;
+      src.connect(burst);
+      src.start();
+      const dl = AC.createDelay(1);
+      dl.delayTime.value = 1 / 220;
+      const damp = AC.createBiquadFilter();
+      damp.type = "lowpass";
+      damp.frequency.value = 3500;
+      const fb = AC.createGain();
+      fb.gain.value = 0.97;
+      burst.connect(dl);
+      dl.connect(damp);
+      damp.connect(fb);
+      fb.connect(dl);
+      const out = AC.createGain();
+      dl.connect(out);
+      m.n = { src, burst, dl, damp, fb, out };
+      m.inT = {};
+      m.outN = { out };
+    },
+    knob(m, id, v) { if (id === "damping") smooth(m.n.damp.frequency, v); },
+    gate(m, portId, ev) {
+      const t = Math.max(ev.t, AC.currentTime);
+      const note = Math.round(knobVal(m, "pitch"));
+      const hz = midiHz(note);
+      const decay = knobVal(m, "decay");
+      const T = clamp(1 / hz, 0.0005, 0.05);
+      const fbGain = clamp(Math.exp((Math.log(0.01) * T) / decay), 0.5, 0.995);
+      m.n.dl.delayTime.setValueAtTime(T, t);
+      m.n.fb.gain.setValueAtTime(fbGain, t);
+      const bg = m.n.burst.gain;
+      holdParam(bg, t);
+      bg.setValueAtTime(0, t);
+      bg.linearRampToValueAtTime(1, t + 0.001);
+      bg.setTargetAtTime(0, t + T, T * 0.5);
+    },
+  },
+
+  /* ---- pedals: same in/out shape as delay/dist/verb, so all seven join
+     one swappable pedalboard ---- */
+
+  fuzz: {
+    title: "fuzz", color: "#ff4d7a",
+    knobs: [
+      { id: "drive", label: "drive", min: 2, max: 100, curve: "log", v0: 25, fmt: fNum },
+      { id: "bias", label: "bias", min: -0.5, max: 0.5, curve: "lin", v0: 0.15, fmt: fNum },
+      { id: "level", label: "level", min: 0, max: 1, curve: "lin", v0: 0.5, fmt: fPct },
+    ],
+    ins: [{ id: "in", kind: "audio", strict: true, help: "the signal to fuzz." }],
+    outs: [{ id: "out", kind: "audio", help: "the fuzzed signal — harder, more asymmetric clipping than distortion." }],
+    create(m) {
+      const pre = AC.createGain(), post = AC.createGain();
+      const sh = AC.createWaveShaper();
+      sh.oversample = "4x";
+      pre.connect(sh);
+      sh.connect(post);
+      m.n = { pre, post, sh };
+      m.inT = { in: pre };
+      m.outN = { out: post };
+      updateFuzzCurve(m);
+    },
+    knob(m, id, v) {
+      if (id === "drive") smooth(m.n.pre.gain, v);
+      else if (id === "level") smooth(m.n.post.gain, v);
+      else updateFuzzCurve(m);
+    },
+  },
+
+  crush: {
+    title: "crush", color: "#b8e86b",
+    knobs: [
+      { id: "bits", label: "bits", min: 1, max: 8, curve: "lin", step: 1, v0: 4, fmt: fInt },
+      { id: "level", label: "level", min: 0, max: 1, curve: "lin", v0: 0.8, fmt: fPct },
+    ],
+    ins: [{ id: "in", kind: "audio", strict: true, help: "the signal to crush." }],
+    outs: [{ id: "out", kind: "audio", help: "bit-crushed — stepped, lo-fi, digital grit." }],
+    create(m) {
+      const pre = AC.createGain(), post = AC.createGain();
+      const sh = AC.createWaveShaper();
+      pre.connect(sh);
+      sh.connect(post);
+      m.n = { pre, post, sh };
+      m.inT = { in: pre };
+      m.outN = { out: post };
+      updateCrushCurve(m);
+    },
+    knob(m, id, v) {
+      if (id === "level") smooth(m.n.post.gain, v);
+      else updateCrushCurve(m);
+    },
+  },
+
+  chorus: {
+    title: "chorus", color: "#6a9eff",
+    knobs: [
+      { id: "rate", label: "rate", min: 0.05, max: 5, curve: "log", v0: 0.6, fmt: fHz },
+      { id: "depth", label: "depth", min: 0, max: 8, curve: "lin", v0: 3, fmt: fNum },
+      { id: "mix", label: "mix", min: 0, max: 1, curve: "lin", v0: 0.5, fmt: fPct },
+    ],
+    ins: [{ id: "in", kind: "audio", strict: true, help: "the signal to thicken." }],
+    outs: [{ id: "out", kind: "audio", help: "dry signal plus a detuned, modulated copy — a shimmering chorus." }],
+    create(m) {
+      const inG = AC.createGain(), outG = AC.createGain(), wet = AC.createGain();
+      const dl = AC.createDelay(0.05);
+      dl.delayTime.value = 0.018;
+      const lfo = AC.createOscillator();
+      lfo.type = "sine";
+      lfo.frequency.value = 0.6;
+      const depthG = AC.createGain();
+      depthG.gain.value = 0.003;
+      lfo.connect(depthG);
+      depthG.connect(dl.delayTime);
+      lfo.start();
+      inG.connect(outG);
+      inG.connect(dl);
+      dl.connect(wet);
+      wet.connect(outG);
+      m.n = { inG, outG, wet, dl, lfo, depthG };
+      m.inT = { in: inG };
+      m.outN = { out: outG };
+    },
+    knob(m, id, v) {
+      if (id === "rate") smooth(m.n.lfo.frequency, v);
+      else if (id === "depth") smooth(m.n.depthG.gain, v / 1000);
+      else smooth(m.n.wet.gain, v);
+    },
+  },
+
+  phaser: {
+    title: "phaser", color: "#c084fc",
+    knobs: [
+      { id: "rate", label: "rate", min: 0.05, max: 4, curve: "log", v0: 0.4, fmt: fHz },
+      { id: "depth", label: "depth", min: 100, max: 2500, curve: "log", v0: 600, fmt: fHz },
+      { id: "mix", label: "mix", min: 0, max: 1, curve: "lin", v0: 0.5, fmt: fPct },
+    ],
+    ins: [{ id: "in", kind: "audio", strict: true, help: "the signal to phase." }],
+    outs: [{ id: "out", kind: "audio", help: "dry signal plus a sweeping series of notches — a classic phaser." }],
+    create(m) {
+      const inG = AC.createGain(), outG = AC.createGain(), wet = AC.createGain();
+      const stages = [];
+      let node = inG;
+      for (let i = 0; i < 4; i++) {
+        const ap = AC.createBiquadFilter();
+        ap.type = "allpass";
+        ap.frequency.value = 1000;
+        ap.Q.value = 0.5;
+        node.connect(ap);
+        node = ap;
+        stages.push(ap);
+      }
+      node.connect(wet);
+      wet.connect(outG);
+      inG.connect(outG);
+      const lfo = AC.createOscillator();
+      lfo.type = "sine";
+      lfo.frequency.value = 0.4;
+      const depthG = AC.createGain();
+      depthG.gain.value = 600;
+      lfo.connect(depthG);
+      for (const ap of stages) depthG.connect(ap.frequency);
+      lfo.start();
+      m.n = { inG, outG, wet, stages, lfo, depthG };
+      m.inT = { in: inG };
+      m.outN = { out: outG };
+    },
+    knob(m, id, v) {
+      if (id === "rate") smooth(m.n.lfo.frequency, v);
+      else if (id === "depth") smooth(m.n.depthG.gain, v);
+      else smooth(m.n.wet.gain, v);
+    },
+  },
 };
 
-const PALETTE_ORDER = ["osc", "lfo", "env", "amp", "filter", "seq", "arp", "noise", "delay", "dist", "verb", "out"];
+const PALETTE_ORDER = [
+  "osc", "lfo", "env", "amp", "filter", "seq", "arp", "noise", "delay", "dist", "verb", "out",
+  "kick", "snare", "hat", "clap", "cymbal", "pluck", "fuzz", "crush", "chorus", "phaser",
+];
 
 /* Hot-swap: two module types are drop-in replacements for each other only
    if their ports match exactly — same ids, same kind, same cv/strict role,
@@ -1275,7 +1704,54 @@ function presetDrift() {
   saveSoon();
 }
 
-const PRESETS = { starter: presetStarter, acid: presetAcid, drift: presetDrift };
+function presetBeats() {
+  clearAll();
+  // a plain 8th-note pulse, used only to keep every drum's own sequencer
+  // locked to the same grid -- its own pitch output goes nowhere
+  const master = addModule("seq", 40, 60);
+  setKnobValue(master, "tempo", 128);
+  master.stepsData = Array.from({ length: 8 }, () => ({ n: 60, on: true }));
+  refreshSteps(master);
+
+  const kickSeq = addModule("seq", 40, 260);
+  kickSeq.stepsData = [1, 0, 0, 0, 1, 0, 1, 0].map((on) => ({ n: 36, on: !!on }));
+  refreshSteps(kickSeq);
+  const kick = addModule("kick", 300, 260);
+  connect(port(master, "out", "gate"), port(kickSeq, "in", "clock"));
+  connect(port(kickSeq, "out", "gate"), port(kick, "in", "gate"));
+
+  const snareSeq = addModule("seq", 40, 440);
+  snareSeq.stepsData = [0, 0, 1, 0, 0, 0, 1, 0].map((on) => ({ n: 60, on: !!on }));
+  refreshSteps(snareSeq);
+  const snare = addModule("snare", 300, 440);
+  connect(port(master, "out", "gate"), port(snareSeq, "in", "clock"));
+  connect(port(snareSeq, "out", "gate"), port(snare, "in", "gate"));
+
+  const hatSeq = addModule("seq", 40, 620);
+  hatSeq.stepsData = Array.from({ length: 8 }, () => ({ n: 60, on: true }));
+  refreshSteps(hatSeq);
+  const hat = addModule("hat", 300, 620);
+  setKnobValue(hat, "decay", 0.05);
+  connect(port(master, "out", "gate"), port(hatSeq, "in", "clock"));
+  connect(port(hatSeq, "out", "gate"), port(hat, "in", "gate"));
+
+  const clapSeq = addModule("seq", 40, 800);
+  clapSeq.stepsData = [0, 0, 0, 0, 1, 0, 0, 1].map((on) => ({ n: 60, on: !!on }));
+  refreshSteps(clapSeq);
+  const clap = addModule("clap", 300, 800);
+  connect(port(master, "out", "gate"), port(clapSeq, "in", "clock"));
+  connect(port(clapSeq, "out", "gate"), port(clap, "in", "gate"));
+
+  const spk = addModule("out", 620, 440);
+  connect(port(kick, "out", "out"), port(spk, "in", "in"));
+  connect(port(snare, "out", "out"), port(spk, "in", "in"));
+  connect(port(hat, "out", "out"), port(spk, "in", "in"));
+  connect(port(clap, "out", "out"), port(spk, "in", "in"));
+
+  saveSoon();
+}
+
+const PRESETS = { starter: presetStarter, acid: presetAcid, drift: presetDrift, beats: presetBeats };
 
 /* ---------------- toolbar ---------------- */
 

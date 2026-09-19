@@ -8,10 +8,15 @@ dependencies, three files.
 ## How it works
 
 - **Modules** (`TYPES` in `script.js`) each own a few AudioNodes and
-  declare their knobs, selects, and ports. Twelve of them: oscillator,
+  declare their knobs, selects, and ports. Twenty-two of them: oscillator,
   lfo, envelope, amp, filter, step sequencer, arpeggiator, noise, delay,
   distortion, reverb, and a speaker with a live oscilloscope and a soft
-  safety limiter.
+  safety limiter; six one-shot percussion/pluck voices — kick, snare,
+  hihat, clap, cymbal, and a Karplus-Strong plucked string — all
+  gate-in/audio-out, so they're a hot-swappable drum kit; and four more
+  pedals alongside delay/dist/reverb — fuzz, crush (a native WaveShaper
+  bit-crusher, no ScriptProcessor/Worklet needed), chorus, and phaser —
+  joining them into one seven-way swappable pedalboard.
 - **Cables** come in two kinds. Cyan jacks carry audio/CV as real
   AudioNode → AudioNode/AudioParam connections; orange jacks carry
   gate/trigger events as JS callbacks with pre-scheduled audio-clock
@@ -41,14 +46,15 @@ dependencies, three files.
   the exact same ports (same ids, kinds, and cv/strict roles on every in
   and out) — `SWAP_GROUPS` in `script.js` derives this from `TYPES` itself,
   so it never drifts out of sync with the port declarations. That's
-  delay/dist/verb, seq/arp, and lfo/noise as of this writing. Swapping
-  rebuilds the module and re-points its existing cables at the same
-  port ids on the replacement rather than dropping them, and carries over
-  any knob/select the two share an id for (e.g. delay and verb both have
-  a `mix` knob). Modules with no same-shaped sibling (osc, env, amp,
+  delay/dist/verb/fuzz/crush/chorus/phaser, seq/arp, lfo/noise, and
+  kick/snare/hat/clap/cymbal/pluck as of this writing. Swapping rebuilds
+  the module and re-points its existing cables at the same port ids on
+  the replacement rather than dropping them, and carries over any
+  knob/select the two share an id for (e.g. delay and verb both have a
+  `mix` knob). Modules with no same-shaped sibling (osc, env, amp,
   filter, the speaker) just don't get a swap control.
-- Patches autosave to `localStorage`; three demo patches (starter, acid,
-  drift) live at the bottom of `script.js`.
+- Patches autosave to `localStorage`; four demo patches (starter, acid,
+  drift, beats) live at the bottom of `script.js`.
 
 ## Development
 
