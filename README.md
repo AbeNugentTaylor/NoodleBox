@@ -8,11 +8,11 @@ dependencies, three files.
 ## How it works
 
 - **Modules** (`TYPES` in `script.js`) each own a few AudioNodes and
-  declare their knobs, selects, and ports. Twenty-two of them: oscillator,
-  lfo, envelope, amp, filter, step sequencer, arpeggiator, noise, delay,
-  distortion, reverb, and a speaker with a live oscilloscope and a soft
-  safety limiter; six one-shot percussion/pluck voices — kick, snare,
-  hihat, clap, cymbal, and a Karplus-Strong plucked string — all
+  declare their knobs, selects, and ports. Twenty-three of them: oscillator,
+  lfo, envelope, amp, filter, a master clock, step sequencer, arpeggiator,
+  noise, delay, distortion, reverb, and a speaker with a live oscilloscope
+  and a soft safety limiter; six one-shot percussion/pluck voices — kick,
+  snare, hihat, clap, cymbal, and a Karplus-Strong plucked string — all
   gate-in/audio-out, so they're a hot-swappable drum kit; and four more
   pedals alongside delay/dist/reverb — fuzz, crush (a native WaveShaper
   bit-crusher, no ScriptProcessor/Worklet needed), chorus, and phaser —
@@ -39,9 +39,25 @@ dependencies, three files.
   machine; an actual drag (movement past a small threshold) still works
   exactly as it always has and isn't affected by anything armed.
 - The **sequencer** and **arpeggiator** run tiny lookahead schedulers
-  against `AudioContext.currentTime`; each has a clock input so one can
-  drive another (polyrhythms). Click a step to mute it, drag it to change
-  its note.
+  against `AudioContext.currentTime`; each has a clock input so a
+  **clock** module (or another sequencer's gate) can drive several of them
+  off one shared beat. Each track then sets its own `rate` (÷8…x8,
+  multiplying or dividing against the incoming pulse — `handleExternalClock()`
+  in `script.js`) and its own pattern length (the sequencer's `steps`
+  knob, 1-32, no longer a fixed 8), which is what makes polyrhythmic
+  phasing possible: an 8-step pattern against a 6-step one drifts in and
+  out of phase with it, exactly like the `beats` demo patch does. Click a
+  step to mute it, drag it to change its note — a sequencer's `scale`
+  dropdown constrains dragged notes to a chosen scale or chord instead of
+  fully free chromatic placement. An unconnected sequencer also offers a
+  sound-preset dropdown (Strings, Pluck, Pad, Drums) that auto-builds a
+  full oscillator/noise + envelope + filter chain behind it
+  (`buildSoundChain()`); it's just pre-populating the patch, so anything it
+  builds can still be swapped, rewired, or removed afterward. And since a
+  sequencer/arpeggiator only outputs pitch/gate control data, one with no
+  oscillator (or other audio-rate source) anywhere downstream in its
+  signal chain shows a non-blocking ⚠ next to its title
+  (`chainHasSource()`) instead of just silently staying silent.
 - **Hot-swapping**: a module can be replaced in place by another one with
   the exact same ports (same ids, kinds, and cv/strict roles on every in
   and out) — `SWAP_GROUPS` in `script.js` derives this from `TYPES` itself,

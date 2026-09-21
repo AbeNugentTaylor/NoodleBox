@@ -147,6 +147,55 @@ function makeClock(m, onStep) {
   m.clockStep = onStep; // used by the clock-in gate handler
 }
 
+/* multi-track clock sync: a sequencer/arpeggio driven by an external "clock"
+   gate (rather than its own internal tempo) can run at a multiple or a
+   fraction of that incoming pulse instead of lock-stepping with it one pulse
+   per step. Dividing just skips pulses; multiplying schedules extra steps
+   between this pulse and the (estimated, from the last two pulses' spacing)
+   next one -- scheduled ahead on the audio clock, same as everything else
+   here, so it doesn't need to literally wait around in real time. */
+const RATE_MUL = { "÷8": 1 / 8, "÷4": 1 / 4, "÷2": 1 / 2, x1: 1, x2: 2, x4: 4, x8: 8 };
+function handleExternalClock(m, ev) {
+  if (!playing) return;
+  const rate = RATE_MUL[m.sel.rate] || 1;
+  const t = ev.t;
+  if (rate >= 1) {
+    const k = Math.round(rate);
+    const period = m.extClockPrevT != null ? t - m.extClockPrevT : null;
+    for (let i = 0; i < k; i++) m.clockStep(m, period != null ? t + i * (period / k) : t);
+  } else {
+    const n = Math.round(1 / rate);
+    m.clockDivCounter = (m.clockDivCounter || 0) + 1;
+    if ((m.clockDivCounter - 1) % n === 0) m.clockStep(m, t);
+  }
+  m.extClockPrevT = t;
+}
+
+/* chord/scale constraint for manual step-note placement: pitch classes are
+   fixed relative to C, which keeps this simple -- the aim is "more likely
+   to sound good" for free dragging, not full music-theory key tracking. */
+const SCALES = {
+  chromatic: null,
+  major: [0, 2, 4, 5, 7, 9, 11],
+  minor: [0, 2, 3, 5, 7, 8, 10],
+  pentaMaj: [0, 2, 4, 7, 9],
+  pentaMin: [0, 3, 5, 7, 10],
+  blues: [0, 3, 5, 6, 7, 10],
+  majTriad: [0, 4, 7],
+  minTriad: [0, 3, 7],
+};
+function snapToScale(n, key) {
+  const set = SCALES[key];
+  if (!set) return n;
+  const pc = ((n % 12) + 12) % 12;
+  let best = set[0], bestDist = 12;
+  for (const iv of set) {
+    const d = Math.min(Math.abs(pc - iv), 12 - Math.abs(pc - iv));
+    if (d < bestDist) { bestDist = d; best = iv; }
+  }
+  return n - pc + best;
+}
+
 /* ---------------- module catalogue ---------------- */
 
 const TYPES = {
@@ -275,6 +324,19 @@ const TYPES = {
     select(m, id, v) { m.n.f.type = v; },
   },
 
+  clock: {
+    title: "clock", color: "#66e0a3",
+    knobs: [{ id: "tempo", label: "tempo", min: 40, max: 240, curve: "lin", v0: 120, fmt: fBpm }],
+    ins: [],
+    outs: [{ id: "gate", kind: "gate", help: "a steady pulse at the “tempo” knob — feed it into sequencers' or arpeggios' “clock” input to sync them to one shared master beat, then set each one's own “rate” to multiply or divide against it." }],
+    create(m) {
+      m.n = {};
+      m.inT = {};
+      m.outN = {};
+      makeClock(m, (mm, t) => { fireGate(mm, "gate", { t, dur: stepDur(mm) * 0.5 }); });
+    },
+  },
+
   noise: {
     title: "noise", color: "#aab6d6",
     knobs: [{ id: "level", label: "level", min: 0, max: 1, curve: "sq", v0: 0.5, fmt: fPct }],
@@ -296,12 +358,17 @@ const TYPES = {
 
   seq: {
     title: "sequencer", color: "#ff8bd0",
+    selects: [
+      { id: "scale", opts: ["chromatic", "major", "minor", "pentaMaj", "pentaMin", "blues", "majTriad", "minTriad"], v0: "chromatic" },
+      { id: "rate", opts: ["÷8", "÷4", "÷2", "x1", "x2", "x4", "x8"], v0: "x1" },
+    ],
     knobs: [
+      { id: "steps", label: "steps", min: 1, max: 32, curve: "lin", step: 1, v0: 8, fmt: fInt },
       { id: "tempo", label: "tempo", min: 40, max: 240, curve: "lin", v0: 120, fmt: fBpm },
       { id: "gate", label: "gate len", min: 0.05, max: 0.95, curve: "lin", v0: 0.6, fmt: fPct },
       { id: "glide", label: "glide", min: 0, max: 0.4, curve: "cu", v0: 0, fmt: fS },
     ],
-    ins: [{ id: "clock", kind: "gate", help: "an external gate that advances the sequencer a step, instead of its own internal tempo." }],
+    ins: [{ id: "clock", kind: "gate", help: "an external gate that advances the sequencer a step, instead of its own internal tempo — set “rate” to run at a multiple or a fraction of it." }],
     outs: [
       { id: "pitch", kind: "audio", role: "cv", help: "the current step's note, as a Hz value — feed it into an oscillator's pitch input." },
       { id: "gate", kind: "gate", help: "fires once per active step, timed by the “gate len” knob." },
@@ -327,20 +394,29 @@ const TYPES = {
         litCell(mm, mm.pos, t);
       });
     },
-    gate(m, portId, ev) { if (playing) m.clockStep(m, ev.t); },
+    knob(m, id, v) { if (id === "steps") resizeSteps(m, v); },
+    gate(m, portId, ev) { handleExternalClock(m, ev); },
     custom(m, body) {
+      const presetRow = document.createElement("div");
+      presetRow.className = "seqPreset";
+      const sel = document.createElement("select");
+      sel.innerHTML = '<option value="">sound preset…</option>' +
+        Object.keys(SOUND_PRESETS).map((k) => `<option value="${k}">${SOUND_PRESETS[k].label}</option>`).join("");
+      sel.title = "build a default oscillator + envelope + filter chain behind this sequencer";
+      sel.addEventListener("pointerdown", (e) => e.stopPropagation());
+      sel.addEventListener("change", () => {
+        if (sel.value) { buildSoundChain(m, sel.value); sel.value = ""; }
+      });
+      presetRow.appendChild(sel);
+      m.presetWrap = presetRow;
+      body.appendChild(presetRow);
+      updatePresetVisibility(m);
+
       const row = document.createElement("div");
       row.className = "steps";
-      m.cells = m.stepsData.map((st, i) => {
-        const c = document.createElement("div");
-        c.className = "cell";
-        c.innerHTML = '<div class="fill"></div><div class="nn"></div>';
-        bindCell(m, c, i);
-        row.appendChild(c);
-        return c;
-      });
+      m.stepsRow = row;
       body.appendChild(row);
-      refreshSteps(m);
+      buildStepCells(m);
     },
   },
 
@@ -349,6 +425,7 @@ const TYPES = {
     selects: [
       { id: "chord", opts: ["minor", "major", "min7", "maj7", "sus4"], v0: "minor" },
       { id: "pattern", opts: ["up", "down", "up-down", "random"], v0: "up" },
+      { id: "rate", opts: ["÷8", "÷4", "÷2", "x1", "x2", "x4", "x8"], v0: "x1" },
     ],
     knobs: [
       { id: "root", label: "root", min: 36, max: 72, curve: "lin", step: 1, v0: 45, fmt: fNote },
@@ -356,7 +433,7 @@ const TYPES = {
       { id: "oct", label: "octaves", min: 1, max: 3, curve: "lin", step: 1, v0: 2, fmt: fInt },
       { id: "gate", label: "gate len", min: 0.05, max: 0.95, curve: "lin", v0: 0.5, fmt: fPct },
     ],
-    ins: [{ id: "clock", kind: "gate", help: "an external gate that advances the arpeggio a step, instead of its own internal tempo." }],
+    ins: [{ id: "clock", kind: "gate", help: "an external gate that advances the arpeggio a step, instead of its own internal tempo — set “rate” to run at a multiple or a fraction of it." }],
     outs: [
       { id: "pitch", kind: "audio", role: "cv", help: "the current note, as a Hz value — feed it into an oscillator's pitch input." },
       { id: "gate", kind: "gate", help: "fires for each note in the pattern, timed by the “gate len” knob." },
@@ -391,7 +468,7 @@ const TYPES = {
         }
       });
     },
-    gate(m, portId, ev) { if (playing) m.clockStep(m, ev.t); },
+    gate(m, portId, ev) { handleExternalClock(m, ev); },
     custom(m, body) {
       const r = document.createElement("div");
       r.className = "aread";
@@ -926,7 +1003,7 @@ const TYPES = {
 };
 
 const PALETTE_ORDER = [
-  "osc", "lfo", "env", "amp", "filter", "seq", "arp", "noise", "delay", "dist", "verb", "out",
+  "osc", "lfo", "env", "amp", "filter", "clock", "seq", "arp", "noise", "delay", "dist", "verb", "out",
   "kick", "snare", "hat", "clap", "cymbal", "pluck", "fuzz", "crush", "chorus", "phaser",
 ];
 
@@ -1007,6 +1084,35 @@ function refreshSteps(m) {
     c.querySelector(".nn").textContent = noteName(st.n);
   });
 }
+/* (re)builds the row of step cells from m.stepsData -- used both at module
+   creation and whenever the "steps" knob changes the pattern length */
+function buildStepCells(m) {
+  m.stepsRow.innerHTML = "";
+  m.cells = m.stepsData.map((st, i) => {
+    const c = document.createElement("div");
+    c.className = "cell";
+    c.innerHTML = '<div class="fill"></div><div class="nn"></div>';
+    bindCell(m, c, i);
+    m.stepsRow.appendChild(c);
+    return c;
+  });
+  refreshSteps(m);
+}
+/* raises the sequencer's step-limit hard cap of 8 to a user-configurable
+   count (1-32): new steps default off so growing the pattern doesn't change
+   what's already playing, and this also doubles as each track's independent
+   pattern length for polyrhythmic phasing against other tracks. */
+function resizeSteps(m, n) {
+  n = clamp(Math.round(n), 1, 32);
+  if (n === m.stepsData.length) return;
+  if (n > m.stepsData.length) {
+    while (m.stepsData.length < n) m.stepsData.push({ n: 60, on: false });
+  } else {
+    m.stepsData.length = n;
+  }
+  buildStepCells(m);
+  saveSoon();
+}
 function bindCell(m, c, i) {
   let y0 = 0, n0 = 0, moved = false;
   c.addEventListener("pointerdown", (e) => {
@@ -1022,7 +1128,9 @@ function bindCell(m, c, i) {
     const dn = Math.round((y0 - e.clientY) / 6);
     if (dn !== 0) moved = true;
     if (moved) {
-      m.stepsData[i].n = clamp(n0 + dn, 36, 84);
+      let n = clamp(n0 + dn, 36, 84);
+      if (m.sel.scale) n = snapToScale(n, m.sel.scale);
+      m.stepsData[i].n = n;
       refreshSteps(m);
     }
   });
@@ -1058,6 +1166,16 @@ function addModule(type, x, y) {
   const head = document.createElement("div");
   head.className = "mhead";
   head.innerHTML = `<span>${spec.title}</span>`;
+  if (SOURCE_NEEDED_TYPES.has(type)) {
+    const warn = document.createElement("div");
+    warn.className = "srcwarn";
+    warn.textContent = "⚠";
+    warn.hidden = true;
+    warn.addEventListener("pointerdown", (e) => e.stopPropagation());
+    warn.addEventListener("click", () => toast("⚠ “" + spec.title + "” has no oscillator (or other sound source) anywhere downstream in its signal chain — it'll stay silent until one's patched in."));
+    m.warnEl = warn;
+    head.appendChild(warn);
+  }
   if (SWAP_GROUPS[type].length) {
     const swapSel = document.createElement("select");
     swapSel.className = "swap";
@@ -1144,6 +1262,7 @@ function addModule(type, x, y) {
   m.el = el;
   field.appendChild(el);
   modules.push(m);
+  if (m.warnEl) updateSourceWarnings();
   return m;
 }
 
@@ -1269,6 +1388,9 @@ function connect(a, b) {
   hit.addEventListener("click", () => { removeConn(c); saveSoon(); });
   conns.push(c);
   redrawConn(c);
+  updatePresetVisibility(a.m);
+  updatePresetVisibility(b.m);
+  updateSourceWarnings();
   return c;
 }
 
@@ -1279,6 +1401,106 @@ function removeConn(c) {
   c.el.remove();
   const i = conns.indexOf(c);
   if (i >= 0) conns.splice(i, 1);
+  updatePresetVisibility(c.a.m);
+  updatePresetVisibility(c.b.m);
+  updateSourceWarnings();
+}
+
+/* feature 1: a sequencer/arpeggio outputs raw pitch/control data, not audio
+   -- it needs an oscillator (or other audio-rate sound source) somewhere
+   downstream in its signal chain to be heard. This is a non-blocking flag,
+   not a hard requirement: nothing here stops a "dead end" patch, it's just
+   surfaced on the module so it's not a silent mystery.
+   "Downstream" is checked as plain graph connectivity (any cable, either
+   direction) rather than simulating which AudioParam a cable actually
+   modulates: a gate into an envelope whose cv modulates an amp's gain is
+   just as much "in the signal path" as an audio cable, since it's exactly
+   how an oscillator/noise source plugged into that same amp's "in" gets
+   heard (see the drums sound preset below). The one thing this simple
+   heuristic can't tell apart is several independent tracks that converge
+   on a shared hub like the speaker -- reaching a working track's
+   oscillator through that shared hub can under-warn a genuinely
+   disconnected one. Acceptable: it's a helpful flag for the common "forgot
+   an oscillator entirely" case, not a rigorous signal-flow prover. */
+const AUDIO_SOURCE_TYPES = new Set(["osc", "noise", "kick", "snare", "hat", "clap", "cymbal", "pluck"]);
+const SOURCE_NEEDED_TYPES = new Set(["seq", "arp"]);
+function chainHasSource(start) {
+  const seen = new Set([start]);
+  const queue = [start];
+  while (queue.length) {
+    const m = queue.shift();
+    for (const c of conns) {
+      let next = null;
+      if (c.a.m === m) next = c.b.m;
+      else if (c.b.m === m) next = c.a.m;
+      else continue;
+      if (seen.has(next)) continue;
+      if (AUDIO_SOURCE_TYPES.has(next.type)) return true;
+      seen.add(next);
+      queue.push(next);
+    }
+  }
+  return false;
+}
+function updateSourceWarnings() {
+  for (const m of modules) {
+    if (!m.warnEl) continue;
+    m.warnEl.hidden = chainHasSource(m);
+  }
+}
+
+/* feature 2: while a sequencer isn't wired to anything yet, offer a
+   one-tap default sound-source chain instead of leaving it dead-ended */
+function updatePresetVisibility(m) {
+  if (!m.presetWrap) return;
+  const connected = conns.some((c) => c.a.m === m || c.b.m === m);
+  m.presetWrap.style.display = connected ? "none" : "flex";
+}
+
+const SOUND_PRESETS = {
+  strings: { label: "Strings", wave: "sawtooth", cut: 2000, res: 1, env: { atk: 0.35, dec: 0.4, sus: 0.75, rel: 1.1 } },
+  pluck: { label: "Pluck", wave: "triangle", cut: 3800, res: 3, env: { atk: 0.004, dec: 0.18, sus: 0.05, rel: 0.25 } },
+  pad: { label: "Pad", wave: "sine", cut: 900, res: 1, env: { atk: 1.0, dec: 0.6, sus: 0.9, rel: 1.8 } },
+  drums: { label: "Drums", noise: true, filterType: "highpass", cut: 3500, res: 0, env: { atk: 0.003, dec: 0.09, sus: 0, rel: 0.05 } },
+};
+/* feature 2: picking a preset auto-builds and attaches the full default
+   chain behind the sequencer -- just pre-populating it, nothing here locks
+   the result down; the user can still disconnect/swap/insert afterward. */
+function buildSoundChain(seq, key) {
+  const def = SOUND_PRESETS[key];
+  if (!def) return;
+  const bx = (dx) => clamp(seq.x + dx, 0, 1750 - 170);
+  const by = (dy) => clamp(seq.y + dy, 0, 1050 - 140);
+
+  const src = def.noise ? addModule("noise", bx(260), by(0)) : addModule("osc", bx(260), by(0));
+  if (!def.noise) setSel(src, "wave", def.wave);
+
+  const flt = addModule("filter", bx(520), by(0));
+  setSel(flt, "type", def.filterType || "lowpass");
+  setKnobValue(flt, "cut", def.cut);
+  setKnobValue(flt, "res", def.res);
+
+  const env = addModule("env", bx(260), by(200));
+  setKnobValue(env, "atk", def.env.atk);
+  setKnobValue(env, "dec", def.env.dec);
+  setKnobValue(env, "sus", def.env.sus);
+  setKnobValue(env, "rel", def.env.rel);
+
+  const amp = addModule("amp", bx(780), by(0));
+  setKnobValue(amp, "level", 0); // envelope's cv drives gain fully instead
+
+  if (!def.noise) connect(port(seq, "out", "pitch"), port(src, "in", "pitch"));
+  connect(port(seq, "out", "gate"), port(env, "in", "gate"));
+  connect(port(env, "out", "out"), port(amp, "in", "cv"));
+  connect(port(src, "out", "out"), port(flt, "in", "in"));
+  connect(port(flt, "out", "out"), port(amp, "in", "in"));
+
+  let spk = modules.find((mm) => mm.type === "out");
+  if (!spk) spk = addModule("out", bx(1040), by(0));
+  connect(port(amp, "out", "out"), port(spk, "in", "in"));
+
+  redrawAll();
+  saveSoon();
 }
 
 function redrawConn(c) {
@@ -1589,7 +1811,7 @@ function loadPatch(data) {
     const m = addModule(md.t, md.x, md.y);
     if (md.st && m.stepsData) {
       m.stepsData = md.st.map((s) => ({ n: s.n, on: !!s.on }));
-      refreshSteps(m);
+      buildStepCells(m); // pattern length may differ from the default 8
     }
     for (const id in md.k || {}) if (knobDef(m, id)) setKnobT(m, id, md.k[id], true);
     for (const id in md.s || {}) if (m.selEls[id]) setSel(m, id, md.s[id]);
@@ -1713,12 +1935,9 @@ function presetDrift() {
 
 function presetBeats() {
   clearAll();
-  // a plain 8th-note pulse, used only to keep every drum's own sequencer
-  // locked to the same grid -- its own pitch output goes nowhere
-  const master = addModule("seq", 40, 60);
+  // master clock: every drum's sequencer locks its steps to this one beat
+  const master = addModule("clock", 40, 60);
   setKnobValue(master, "tempo", 128);
-  master.stepsData = Array.from({ length: 8 }, () => ({ n: 60, on: true }));
-  refreshSteps(master);
 
   const kickSeq = addModule("seq", 40, 260);
   kickSeq.stepsData = [1, 0, 0, 0, 1, 0, 1, 0].map((on) => ({ n: 36, on: !!on }));
@@ -1737,13 +1956,17 @@ function presetBeats() {
   const hatSeq = addModule("seq", 40, 620);
   hatSeq.stepsData = Array.from({ length: 8 }, () => ({ n: 60, on: true }));
   refreshSteps(hatSeq);
+  setSel(hatSeq, "rate", "x2"); // double-time against the master beat
   const hat = addModule("hat", 300, 620);
   setKnobValue(hat, "decay", 0.05);
   connect(port(master, "out", "gate"), port(hatSeq, "in", "clock"));
   connect(port(hatSeq, "out", "gate"), port(hat, "in", "gate"));
 
+  // a 6-step pattern against the kick's 8-step one drifts in and out of
+  // phase with it -- the polyrhythmic phasing a per-track pattern length enables
   const clapSeq = addModule("seq", 40, 800);
-  clapSeq.stepsData = [0, 0, 0, 0, 1, 0, 0, 1].map((on) => ({ n: 60, on: !!on }));
+  setKnobValue(clapSeq, "steps", 6);
+  clapSeq.stepsData = [1, 0, 0, 1, 0, 0].map((on) => ({ n: 60, on: !!on }));
   refreshSteps(clapSeq);
   const clap = addModule("clap", 300, 800);
   connect(port(master, "out", "gate"), port(clapSeq, "in", "clock"));
