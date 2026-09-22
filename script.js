@@ -249,10 +249,10 @@ function snapToScale(n, key) {
 const TYPES = {
   osc: {
     title: "oscillator", color: "#2f6ea3",
-    selects: [{ id: "wave", opts: ["sine", "triangle", "sawtooth", "square"], v0: "sawtooth" }],
+    selects: [{ id: "wave", opts: ["sine", "triangle", "sawtooth", "square"], v0: "sawtooth", seg: true, short: ["sin", "tri", "saw", "sqr"] }],
     knobs: [
-      { id: "freq", label: "freq", min: 0, max: 2000, curve: "sq", v0: 110, fmt: fHz },
-      { id: "fm", label: "fm amt", min: 0, max: 2000, curve: "cu", v0: 0, fmt: fHz },
+      { id: "freq", label: "freq", min: 0, max: 2000, curve: "sq", v0: 110, fmt: fHz, size: "lg" },
+      { id: "fm", label: "fm amt", min: 0, max: 2000, curve: "cu", v0: 0, fmt: fHz, size: "sm", cap: "dark" },
     ],
     ins: [
       { id: "pitch", kind: "audio", help: "sets the oscillator's frequency in Hz — feed it a sequencer or arpeggio's pitch output to play notes." },
@@ -276,8 +276,8 @@ const TYPES = {
 
   lfo: {
     title: "lfo", color: "#6b4fa8",
-    selects: [{ id: "wave", opts: ["sine", "triangle", "sawtooth", "square"], v0: "sine" }],
-    knobs: [{ id: "rate", label: "rate", min: 0.02, max: 30, curve: "log", v0: 2, fmt: fHz }],
+    selects: [{ id: "wave", opts: ["sine", "triangle", "sawtooth", "square"], v0: "sine", seg: true, short: ["sin", "tri", "saw", "sqr"] }],
+    knobs: [{ id: "rate", label: "rate", min: 0.02, max: 30, curve: "log", v0: 2, fmt: fHz, cap: "accent" }],
     ins: [],
     outs: [{ id: "out", kind: "audio", help: "a slow, repeating wave (set by “rate”) — plug it into a knob's CV jack to wobble that parameter." }],
     create(m) {
@@ -295,10 +295,10 @@ const TYPES = {
   env: {
     title: "envelope", color: "#a6771c",
     knobs: [
-      { id: "atk", label: "attack", min: 0.002, max: 3, curve: "log", v0: 0.005, fmt: fS },
-      { id: "dec", label: "decay", min: 0.01, max: 4, curve: "log", v0: 0.25, fmt: fS },
-      { id: "sus", label: "sustain", min: 0, max: 1, curve: "lin", v0: 0.4, fmt: fPct },
-      { id: "rel", label: "release", min: 0.01, max: 6, curve: "log", v0: 0.3, fmt: fS },
+      { id: "atk", label: "attack", min: 0.002, max: 3, curve: "log", v0: 0.005, fmt: fS, ctrl: "fader" },
+      { id: "dec", label: "decay", min: 0.01, max: 4, curve: "log", v0: 0.25, fmt: fS, ctrl: "fader" },
+      { id: "sus", label: "sustain", min: 0, max: 1, curve: "lin", v0: 0.4, fmt: fPct, ctrl: "fader" },
+      { id: "rel", label: "release", min: 0.01, max: 6, curve: "log", v0: 0.3, fmt: fS, ctrl: "fader" },
     ],
     ins: [{ id: "gate", kind: "gate", help: "triggers the envelope's attack/decay/sustain/release — feed it a sequencer or arpeggio's gate output." }],
     outs: [{ id: "out", kind: "audio", role: "cv", help: "a CV shape from 0 to 1 — use it to modulate amplitude, cutoff, or pitch." }],
@@ -327,7 +327,7 @@ const TYPES = {
 
   amp: {
     title: "amp", color: "#2f8f5c",
-    knobs: [{ id: "level", label: "level", min: 0, max: 1, curve: "lin", v0: 0.7, fmt: fPct }],
+    knobs: [{ id: "level", label: "level", min: 0, max: 1, curve: "lin", v0: 0.7, fmt: fPct, ctrl: "fader", size: "lg" }],
     ins: [
       { id: "in", kind: "audio", strict: true, help: "the signal to amplify — needs an actual waveform, not a CV." },
       { id: "cv", kind: "audio", help: "modulates the volume directly and fully — feed an envelope for plucks, an LFO for tremolo." },
@@ -344,11 +344,11 @@ const TYPES = {
 
   filter: {
     title: "filter", color: "#b5611f",
-    selects: [{ id: "type", opts: ["lowpass", "highpass", "bandpass"], v0: "lowpass" }],
+    selects: [{ id: "type", opts: ["lowpass", "highpass", "bandpass"], v0: "lowpass", seg: true, short: ["lp", "hp", "bp"] }],
     knobs: [
-      { id: "cut", label: "cutoff", min: 40, max: 12000, curve: "log", v0: 1200, fmt: fHz },
-      { id: "res", label: "res", min: 0, max: 20, curve: "sq", v0: 2, fmt: fNum },
-      { id: "mod", label: "mod amt", min: 0, max: 8000, curve: "cu", v0: 0, fmt: fHz },
+      { id: "cut", label: "cutoff", min: 40, max: 12000, curve: "log", v0: 1200, fmt: fHz, size: "lg", cap: "accent" },
+      { id: "res", label: "res", min: 0, max: 20, curve: "sq", v0: 2, fmt: fNum, size: "sm", cap: "dark" },
+      { id: "mod", label: "mod amt", min: 0, max: 8000, curve: "cu", v0: 0, fmt: fHz, size: "sm", cap: "dark" },
     ],
     ins: [
       { id: "in", kind: "audio", strict: true, help: "the signal to filter — needs an actual waveform, not a CV." },
@@ -374,7 +374,7 @@ const TYPES = {
 
   clock: {
     title: "clock", color: "#1f7a5e",
-    knobs: [{ id: "tempo", label: "tempo", min: 40, max: 240, curve: "lin", v0: 120, fmt: fBpm }],
+    knobs: [{ id: "tempo", label: "tempo", min: 40, max: 240, curve: "lin", v0: 120, fmt: fBpm, size: "lg" }],
     ins: [],
     outs: [{ id: "gate", kind: "gate", help: "a steady pulse at the “tempo” knob — feed it into sequencers' or arpeggios' “clock” input to sync them to one shared master beat, then set each one's own “rate” to multiply or divide against it." }],
     create(m) {
@@ -387,9 +387,9 @@ const TYPES = {
 
   noise: {
     title: "noise", color: "#56607a",
-    knobs: [{ id: "level", label: "level", min: 0, max: 1, curve: "sq", v0: 0.5, fmt: fPct }],
+    knobs: [{ id: "level", label: "level", min: 0, max: 1, curve: "sq", v0: 0.5, fmt: fPct, ctrl: "fader" }],
     ins: [],
-    outs: [{ id: "out", kind: "audio", help: "steady white noise, shaped by the “level” knob." }],
+    outs: [{ id: "out", kind: "audio", help: "steady white noise, shaped by the “level” fader." }],
     create(m) {
       const src = AC.createBufferSource();
       src.buffer = whiteNoiseBuffer(2);
@@ -411,10 +411,10 @@ const TYPES = {
       { id: "rate", opts: ["÷8", "÷4", "÷2", "x1", "x2", "x4", "x8"], v0: "x1" },
     ],
     knobs: [
-      { id: "steps", label: "steps", min: 1, max: 32, curve: "lin", step: 1, v0: 8, fmt: fInt },
-      { id: "tempo", label: "tempo", min: 40, max: 240, curve: "lin", v0: 120, fmt: fBpm },
-      { id: "gate", label: "gate len", min: 0.05, max: 0.95, curve: "lin", v0: 0.6, fmt: fPct },
-      { id: "glide", label: "glide", min: 0, max: 0.4, curve: "cu", v0: 0, fmt: fS },
+      { id: "steps", label: "steps", min: 1, max: 32, curve: "lin", step: 1, v0: 8, fmt: fInt, size: "sm", cap: "dark" },
+      { id: "tempo", label: "tempo", min: 40, max: 240, curve: "lin", v0: 120, fmt: fBpm, size: "lg" },
+      { id: "gate", label: "gate len", min: 0.05, max: 0.95, curve: "lin", v0: 0.6, fmt: fPct, size: "sm", cap: "dark" },
+      { id: "glide", label: "glide", min: 0, max: 0.4, curve: "cu", v0: 0, fmt: fS, size: "sm", cap: "dark" },
     ],
     ins: [{ id: "clock", kind: "gate", help: "an external gate that advances the sequencer a step, instead of its own internal tempo — set “rate” to run at a multiple or a fraction of it." }],
     outs: [
@@ -471,15 +471,16 @@ const TYPES = {
   arp: {
     title: "arpeggio", color: "#a8432f",
     selects: [
-      { id: "chord", opts: ["minor", "major", "min7", "maj7", "sus4"], v0: "minor" },
-      { id: "pattern", opts: ["up", "down", "up-down", "random"], v0: "up" },
+      // short labels get uppercased in CSS, so "m7"/"M7" would collide
+      { id: "chord", opts: ["minor", "major", "min7", "maj7", "sus4"], v0: "minor", seg: true, short: ["min", "maj", "mi7", "ma7", "sus"] },
+      { id: "pattern", opts: ["up", "down", "up-down", "random"], v0: "up", seg: true, short: ["up", "dn", "u-d", "rnd"] },
       { id: "rate", opts: ["÷8", "÷4", "÷2", "x1", "x2", "x4", "x8"], v0: "x1" },
     ],
     knobs: [
       { id: "root", label: "root", min: 36, max: 72, curve: "lin", step: 1, v0: 45, fmt: fNote },
       { id: "tempo", label: "tempo", min: 40, max: 240, curve: "lin", v0: 120, fmt: fBpm },
-      { id: "oct", label: "octaves", min: 1, max: 3, curve: "lin", step: 1, v0: 2, fmt: fInt },
-      { id: "gate", label: "gate len", min: 0.05, max: 0.95, curve: "lin", v0: 0.5, fmt: fPct },
+      { id: "oct", label: "octaves", min: 1, max: 3, curve: "lin", step: 1, v0: 2, fmt: fInt, size: "sm", cap: "dark" },
+      { id: "gate", label: "gate len", min: 0.05, max: 0.95, curve: "lin", v0: 0.5, fmt: fPct, size: "sm", cap: "dark" },
     ],
     ins: [{ id: "clock", kind: "gate", help: "an external gate that advances the arpeggio a step, instead of its own internal tempo — set “rate” to run at a multiple or a fraction of it." }],
     outs: [
@@ -529,9 +530,9 @@ const TYPES = {
   delay: {
     title: "delay", color: "#1f7d78",
     knobs: [
-      { id: "time", label: "time", min: 0.03, max: 1, curve: "log", v0: 0.3, fmt: fS },
-      { id: "fb", label: "feedback", min: 0, max: 0.9, curve: "lin", v0: 0.35, fmt: fPct },
-      { id: "mix", label: "mix", min: 0, max: 1, curve: "lin", v0: 0.35, fmt: fPct },
+      { id: "time", label: "time", min: 0.03, max: 1, curve: "log", v0: 0.3, fmt: fS, size: "lg" },
+      { id: "fb", label: "feedback", min: 0, max: 0.9, curve: "lin", v0: 0.35, fmt: fPct, size: "sm", cap: "dark" },
+      { id: "mix", label: "mix", min: 0, max: 1, curve: "lin", v0: 0.35, fmt: fPct, ctrl: "fader" },
     ],
     ins: [{ id: "in", kind: "audio", strict: true, help: "the signal to delay." }],
     outs: [{ id: "out", kind: "audio", help: "dry signal plus the delayed repeats." }],
@@ -558,8 +559,8 @@ const TYPES = {
   dist: {
     title: "distort", color: "#a4263a",
     knobs: [
-      { id: "drive", label: "drive", min: 1, max: 60, curve: "log", v0: 8, fmt: fNum },
-      { id: "level", label: "level", min: 0, max: 1, curve: "lin", v0: 0.6, fmt: fPct },
+      { id: "drive", label: "drive", min: 1, max: 60, curve: "log", v0: 8, fmt: fNum, size: "lg", cap: "accent" },
+      { id: "level", label: "level", min: 0, max: 1, curve: "lin", v0: 0.6, fmt: fPct, ctrl: "fader" },
     ],
     ins: [{ id: "in", kind: "audio", strict: true, help: "the signal to distort." }],
     outs: [{ id: "out", kind: "audio", help: "the distorted signal." }],
@@ -587,8 +588,8 @@ const TYPES = {
   verb: {
     title: "reverb", color: "#3d55a3",
     knobs: [
-      { id: "size", label: "size", min: 0.3, max: 5, curve: "log", v0: 2, fmt: fS },
-      { id: "mix", label: "mix", min: 0, max: 1, curve: "lin", v0: 0.3, fmt: fPct },
+      { id: "size", label: "size", min: 0.3, max: 5, curve: "log", v0: 2, fmt: fS, size: "lg" },
+      { id: "mix", label: "mix", min: 0, max: 1, curve: "lin", v0: 0.3, fmt: fPct, ctrl: "fader" },
     ],
     ins: [{ id: "in", kind: "audio", strict: true, help: "the signal to add reverb to." }],
     outs: [{ id: "out", kind: "audio", help: "dry signal plus the reverb tail." }],
@@ -616,7 +617,7 @@ const TYPES = {
 
   out: {
     title: "speaker", color: "#4a453a",
-    knobs: [{ id: "vol", label: "volume", min: 0, max: 1, curve: "lin", v0: 0.8, fmt: fPct }],
+    knobs: [{ id: "vol", label: "volume", min: 0, max: 1, curve: "lin", v0: 0.8, fmt: fPct, ctrl: "fader", size: "lg" }],
     ins: [{ id: "in", kind: "audio", strict: true, help: "plug the end of your patch in here to actually hear it." }],
     outs: [],
     create(m) {
@@ -658,9 +659,9 @@ const TYPES = {
   kick: {
     title: "kick", color: "#8f3a2a",
     knobs: [
-      { id: "tune", label: "tune", min: 30, max: 120, curve: "lin", v0: 55, fmt: fHz },
-      { id: "punch", label: "punch", min: 0, max: 1, curve: "lin", v0: 0.6, fmt: fPct },
-      { id: "decay", label: "decay", min: 0.05, max: 1.2, curve: "log", v0: 0.35, fmt: fS },
+      { id: "tune", label: "tune", min: 30, max: 120, curve: "lin", v0: 55, fmt: fHz, size: "lg" },
+      { id: "punch", label: "punch", min: 0, max: 1, curve: "lin", v0: 0.6, fmt: fPct, size: "sm", cap: "dark" },
+      { id: "decay", label: "decay", min: 0.05, max: 1.2, curve: "log", v0: 0.35, fmt: fS, size: "sm", cap: "dark" },
     ],
     ins: [{ id: "gate", kind: "gate", help: "triggers a kick hit." }],
     outs: [{ id: "out", kind: "audio", help: "a synthesized kick drum thump." }],
@@ -692,9 +693,9 @@ const TYPES = {
   snare: {
     title: "snare", color: "#b0591a",
     knobs: [
-      { id: "tone", label: "tone", min: 100, max: 400, curve: "lin", v0: 180, fmt: fHz },
-      { id: "snap", label: "snap", min: 0, max: 1, curve: "lin", v0: 0.6, fmt: fPct },
-      { id: "decay", label: "decay", min: 0.05, max: 0.6, curve: "log", v0: 0.18, fmt: fS },
+      { id: "tone", label: "tone", min: 100, max: 400, curve: "lin", v0: 180, fmt: fHz, size: "lg" },
+      { id: "snap", label: "snap", min: 0, max: 1, curve: "lin", v0: 0.6, fmt: fPct, size: "sm", cap: "dark" },
+      { id: "decay", label: "decay", min: 0.05, max: 0.6, curve: "log", v0: 0.18, fmt: fS, size: "sm", cap: "dark" },
     ],
     ins: [{ id: "gate", kind: "gate", help: "triggers a snare hit." }],
     outs: [{ id: "out", kind: "audio", help: "a synthesized snare: noise plus a short tonal body." }],
@@ -742,7 +743,7 @@ const TYPES = {
     title: "hihat", color: "#6b6353",
     knobs: [
       { id: "tone", label: "tone", min: 3000, max: 12000, curve: "log", v0: 7000, fmt: fHz },
-      { id: "decay", label: "decay", min: 0.02, max: 0.8, curve: "log", v0: 0.08, fmt: fS },
+      { id: "decay", label: "decay", min: 0.02, max: 0.8, curve: "log", v0: 0.08, fmt: fS, size: "sm", cap: "dark" },
     ],
     ins: [{ id: "gate", kind: "gate", help: "triggers a hihat tick — a short decay sounds closed, a long one open." }],
     outs: [{ id: "out", kind: "audio", help: "bright, filtered noise — a synthesized hihat." }],
@@ -777,8 +778,8 @@ const TYPES = {
     title: "clap", color: "#a8346a",
     knobs: [
       { id: "tone", label: "tone", min: 800, max: 3000, curve: "log", v0: 1500, fmt: fHz },
-      { id: "spread", label: "spread", min: 0.005, max: 0.05, curve: "lin", v0: 0.02, fmt: fS },
-      { id: "decay", label: "decay", min: 0.05, max: 0.6, curve: "log", v0: 0.2, fmt: fS },
+      { id: "spread", label: "spread", min: 0.005, max: 0.05, curve: "lin", v0: 0.02, fmt: fS, size: "sm", cap: "dark" },
+      { id: "decay", label: "decay", min: 0.05, max: 0.6, curve: "log", v0: 0.2, fmt: fS, size: "sm", cap: "dark" },
     ],
     ins: [{ id: "gate", kind: "gate", help: "triggers a clap hit — several quick noise bursts." }],
     outs: [{ id: "out", kind: "audio", help: "a synthesized hand-clap: layered noise bursts." }],
@@ -818,8 +819,8 @@ const TYPES = {
     title: "cymbal", color: "#8a7226",
     knobs: [
       { id: "tone", label: "tone", min: 3000, max: 10000, curve: "log", v0: 5000, fmt: fHz },
-      { id: "shimmer", label: "shimmer", min: 0, max: 0.95, curve: "lin", v0: 0.5, fmt: fPct },
-      { id: "decay", label: "decay", min: 0.3, max: 3, curve: "log", v0: 1.2, fmt: fS },
+      { id: "shimmer", label: "shimmer", min: 0, max: 0.95, curve: "lin", v0: 0.5, fmt: fPct, size: "sm", cap: "dark" },
+      { id: "decay", label: "decay", min: 0.3, max: 3, curve: "log", v0: 1.2, fmt: fS, size: "sm", cap: "dark" },
     ],
     ins: [{ id: "gate", kind: "gate", help: "triggers a cymbal crash/wash." }],
     outs: [{ id: "out", kind: "audio", help: "long, bright noise with a touch of metallic ring — a crash/ride cymbal." }],
@@ -866,9 +867,9 @@ const TYPES = {
   pluck: {
     title: "pluck", color: "#5c8f2e",
     knobs: [
-      { id: "pitch", label: "pitch", min: 36, max: 84, curve: "lin", step: 1, v0: 57, fmt: fNote },
-      { id: "damping", label: "damping", min: 800, max: 8000, curve: "log", v0: 3500, fmt: fHz },
-      { id: "decay", label: "decay", min: 0.3, max: 8, curve: "log", v0: 2, fmt: fS },
+      { id: "pitch", label: "pitch", min: 36, max: 84, curve: "lin", step: 1, v0: 57, fmt: fNote, size: "lg" },
+      { id: "damping", label: "damping", min: 800, max: 8000, curve: "log", v0: 3500, fmt: fHz, size: "sm", cap: "dark" },
+      { id: "decay", label: "decay", min: 0.3, max: 8, curve: "log", v0: 2, fmt: fS, size: "sm", cap: "dark" },
     ],
     ins: [{ id: "gate", kind: "gate", help: "plucks the string at the current “pitch” knob." }],
     outs: [{ id: "out", kind: "audio", help: "a Karplus-Strong plucked string — like a harp or guitar pluck." }],
@@ -921,9 +922,9 @@ const TYPES = {
   fuzz: {
     title: "fuzz", color: "#a3244f",
     knobs: [
-      { id: "drive", label: "drive", min: 2, max: 100, curve: "log", v0: 25, fmt: fNum },
-      { id: "bias", label: "bias", min: -0.5, max: 0.5, curve: "lin", v0: 0.15, fmt: fNum },
-      { id: "level", label: "level", min: 0, max: 1, curve: "lin", v0: 0.5, fmt: fPct },
+      { id: "drive", label: "drive", min: 2, max: 100, curve: "log", v0: 25, fmt: fNum, size: "lg", cap: "accent" },
+      { id: "bias", label: "bias", min: -0.5, max: 0.5, curve: "lin", v0: 0.15, fmt: fNum, size: "sm", cap: "dark" },
+      { id: "level", label: "level", min: 0, max: 1, curve: "lin", v0: 0.5, fmt: fPct, ctrl: "fader" },
     ],
     ins: [{ id: "in", kind: "audio", strict: true, help: "the signal to fuzz." }],
     outs: [{ id: "out", kind: "audio", help: "the fuzzed signal — harder, more asymmetric clipping than distortion." }],
@@ -948,8 +949,8 @@ const TYPES = {
   crush: {
     title: "crush", color: "#6b8f1e",
     knobs: [
-      { id: "bits", label: "bits", min: 1, max: 8, curve: "lin", step: 1, v0: 4, fmt: fInt },
-      { id: "level", label: "level", min: 0, max: 1, curve: "lin", v0: 0.8, fmt: fPct },
+      { id: "bits", label: "bits", min: 1, max: 8, curve: "lin", step: 1, v0: 4, fmt: fInt, cap: "accent" },
+      { id: "level", label: "level", min: 0, max: 1, curve: "lin", v0: 0.8, fmt: fPct, ctrl: "fader" },
     ],
     ins: [{ id: "in", kind: "audio", strict: true, help: "the signal to crush." }],
     outs: [{ id: "out", kind: "audio", help: "bit-crushed — stepped, lo-fi, digital grit." }],
@@ -973,8 +974,8 @@ const TYPES = {
     title: "chorus", color: "#1f6b8f",
     knobs: [
       { id: "rate", label: "rate", min: 0.05, max: 5, curve: "log", v0: 0.6, fmt: fHz },
-      { id: "depth", label: "depth", min: 0, max: 8, curve: "lin", v0: 3, fmt: fNum },
-      { id: "mix", label: "mix", min: 0, max: 1, curve: "lin", v0: 0.5, fmt: fPct },
+      { id: "depth", label: "depth", min: 0, max: 8, curve: "lin", v0: 3, fmt: fNum, size: "sm", cap: "dark" },
+      { id: "mix", label: "mix", min: 0, max: 1, curve: "lin", v0: 0.5, fmt: fPct, ctrl: "fader" },
     ],
     ins: [{ id: "in", kind: "audio", strict: true, help: "the signal to thicken." }],
     outs: [{ id: "out", kind: "audio", help: "dry signal plus a detuned, modulated copy — a shimmering chorus." }],
@@ -1009,8 +1010,8 @@ const TYPES = {
     title: "phaser", color: "#8f3691",
     knobs: [
       { id: "rate", label: "rate", min: 0.05, max: 4, curve: "log", v0: 0.4, fmt: fHz },
-      { id: "depth", label: "depth", min: 100, max: 2500, curve: "log", v0: 600, fmt: fHz },
-      { id: "mix", label: "mix", min: 0, max: 1, curve: "lin", v0: 0.5, fmt: fPct },
+      { id: "depth", label: "depth", min: 100, max: 2500, curve: "log", v0: 600, fmt: fHz, size: "sm", cap: "dark" },
+      { id: "mix", label: "mix", min: 0, max: 1, curve: "lin", v0: 0.5, fmt: fPct, ctrl: "fader" },
     ],
     ins: [{ id: "in", kind: "audio", strict: true, help: "the signal to phase." }],
     outs: [{ id: "out", kind: "audio", help: "dry signal plus a sweeping series of notches — a classic phaser." }],
@@ -1089,7 +1090,10 @@ function setKnobT(m, id, t, silentSave) {
   const k = knobDef(m, id);
   m.k[id] = clamp(t, 0, 1);
   const w = m.kEls[id];
-  w.querySelector(".kdot").style.setProperty("--rot", (-135 + m.k[id] * 270) + "deg");
+  // a fader slides its cap up the groove; a knob rotates its tick
+  const thumb = w.querySelector(".fthumb");
+  if (thumb) thumb.style.setProperty("--pos", m.k[id]);
+  else w.querySelector(".kdot").style.setProperty("--rot", (-135 + m.k[id] * 270) + "deg");
   const v = knobVal(m, id);
   if (w.classList.contains("live")) w.querySelector(".klab").textContent = k.fmt(v);
   if (m.spec.knob) m.spec.knob(m, id, v);
@@ -1101,12 +1105,14 @@ function setKnobValue(m, id, v) {
 }
 function setSel(m, id, v) {
   m.sel[id] = v;
-  m.selEls[id].value = v;
+  const el = m.selEls[id];
+  if (el.tagName === "SELECT") el.value = v;
+  else for (const b of el.children) b.classList.toggle("on", b.dataset.v === v);
   if (m.spec.select) m.spec.select(m, id, v);
 }
 
 function bindKnob(m, k, wrap) {
-  const knob = wrap.querySelector(".knob");
+  const knob = wrap.querySelector(".knob, .ftrack");
   const lab = wrap.querySelector(".klab");
   let y0 = 0, t0 = 0;
   knob.addEventListener("pointerdown", (e) => {
@@ -1120,7 +1126,9 @@ function bindKnob(m, k, wrap) {
   knob.addEventListener("pointermove", (e) => {
     if (!wrap.classList.contains("live")) return;
     const fine = e.shiftKey ? 0.18 : 1;
-    setKnobT(m, k.id, t0 + ((y0 - e.clientY) / 160) * fine);
+    // a fader gets a shorter throw so the cap roughly tracks the finger
+    const throwPx = k.ctrl === "fader" ? 120 : 160;
+    setKnobT(m, k.id, t0 + ((y0 - e.clientY) / throwPx) * fine);
   });
   const done = () => { wrap.classList.remove("live"); lab.textContent = k.label; };
   knob.addEventListener("pointerup", done);
@@ -1265,22 +1273,45 @@ function addModule(type, x, y) {
   const row = document.createElement("div");
   row.className = "mrow";
   for (const s of spec.selects || []) {
-    const sel = document.createElement("select");
-    for (const o of s.opts) {
-      const op = document.createElement("option");
-      op.value = op.textContent = o;
-      sel.appendChild(op);
+    let el;
+    if (s.seg) {
+      // a short option list reads better as a row of little labelled pads
+      el = document.createElement("div");
+      el.className = "seg";
+      s.opts.forEach((o, i) => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.dataset.v = o;
+        b.textContent = (s.short && s.short[i]) || o;
+        b.title = o;
+        b.addEventListener("pointerdown", (e) => e.stopPropagation());
+        b.addEventListener("click", () => { setSel(m, s.id, o); saveSoon(); });
+        el.appendChild(b);
+      });
+    } else {
+      el = document.createElement("select");
+      for (const o of s.opts) {
+        const op = document.createElement("option");
+        op.value = op.textContent = o;
+        el.appendChild(op);
+      }
+      el.addEventListener("change", () => { setSel(m, s.id, el.value); saveSoon(); });
+      el.addEventListener("pointerdown", (e) => e.stopPropagation());
     }
-    sel.addEventListener("change", () => { setSel(m, s.id, sel.value); saveSoon(); });
-    sel.addEventListener("pointerdown", (e) => e.stopPropagation());
-    m.selEls[s.id] = sel;
-    row.appendChild(sel);
+    m.selEls[s.id] = el;
+    row.appendChild(el);
     setSel(m, s.id, s.v0);
   }
   for (const k of spec.knobs || []) {
     const w = document.createElement("div");
-    w.className = "kwrap";
-    w.innerHTML = `<div class="knob"><div class="kdot"></div></div><div class="klab">${k.label}</div>`;
+    w.className = "kwrap" +
+      (k.ctrl === "fader" ? " fader" : "") +
+      (k.size ? " " + k.size : "") +
+      (k.cap ? " cap-" + k.cap : "");
+    w.innerHTML = (k.ctrl === "fader"
+      ? '<div class="ftrack"><div class="fthumb"></div></div>'
+      : '<div class="knob"><div class="kdot"></div></div>') +
+      `<div class="klab">${k.label}</div>`;
     m.kEls[k.id] = w;
     row.appendChild(w);
     bindKnob(m, k, w);

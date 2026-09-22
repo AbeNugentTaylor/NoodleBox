@@ -161,6 +161,10 @@ body {
 .mod {
   position: absolute;
   z-index: 10;
+  /* modules size to their content, but cap the width so a busy one (the
+     arpeggio's two button rows plus four knobs, say) wraps onto a second
+     line instead of stretching into a long strip */
+  max-width: 310px;
   background: var(--panel);
   border: 1px solid var(--panel-edge);
   border-radius: 10px;
@@ -255,12 +259,25 @@ select {
   max-width: 86px;
 }
 
-/* knobs -- a light cap (like a real hardware knob top) with a dark
-   indicator tick, rather than the old dark glowing dial */
-.kwrap { display: flex; flex-direction: column; align-items: center; gap: 2px; width: 36px; }
+/* Controls. A real hardware panel never uses one control for everything,
+   so neither does this: size, cap colour and shape all carry meaning.
+   Large or accent-capped = the signature parameter you reach for first
+   (a filter's cutoff, a distortion's drive); a fader = a level/mix; a
+   small dark cap = secondary trim. Set per parameter in TYPES via
+   `ctrl: "fader"`, `size: "lg"|"sm"` and `cap: "dark"|"accent"`. */
+.kwrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 30px;
+  padding: 0 1px;
+}
+.kwrap.lg { min-width: 40px; }
+
 .knob {
-  width: 28px;
-  height: 28px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
   background: radial-gradient(circle at 35% 30%, #fffdf7, #ddd2b4 75%);
   border: 1px solid var(--panel-edge);
@@ -268,6 +285,20 @@ select {
   cursor: ns-resize;
   touch-action: none;
 }
+.kwrap.sm .knob { width: 19px; height: 19px; }
+.kwrap.lg .knob { width: 36px; height: 36px; }
+
+/* cap colours -- cream by default, a black cap for secondary trim, and
+   the one warm accent for the parameter that defines the module */
+.kwrap.cap-dark .knob {
+  background: radial-gradient(circle at 35% 30%, #4b453a, #17130d 75%);
+  border-color: #2b251b;
+}
+.kwrap.cap-accent .knob {
+  background: radial-gradient(circle at 35% 30%, #e8703c, #b63c13 78%);
+  border-color: #8e2f0e;
+}
+
 .kdot { position: absolute; inset: 0; transform: rotate(var(--rot, 0deg)); }
 .kdot::after {
   content: "";
@@ -280,6 +311,47 @@ select {
   border-radius: 2px;
   background: var(--mc);
 }
+.kwrap.sm .kdot::after { top: 2px; height: 5px; }
+.kwrap.lg .kdot::after { top: 3px; height: 10px; width: 2.5px; margin-left: -1.25px; }
+.kwrap.cap-dark .kdot::after { background: var(--well-ink); }
+.kwrap.cap-accent .kdot::after { background: #2b1206; }
+
+/* faders -- a recessed groove with a light cap, for levels and mixes */
+.ftrack {
+  position: relative;
+  width: 9px;
+  height: 46px;
+  background: var(--well);
+  border: 1px solid var(--panel-edge);
+  border-radius: 4px;
+  cursor: ns-resize;
+  touch-action: none;
+}
+.kwrap.lg .ftrack { height: 58px; }
+.fthumb {
+  position: absolute;
+  left: 50%;
+  margin-left: -9px;
+  width: 18px;
+  height: 11px;
+  bottom: calc(var(--pos, 0) * (100% - 11px));
+  background: linear-gradient(#fffdf7, #d9cdad);
+  border: 1px solid var(--panel-edge);
+  border-radius: 3px;
+  box-shadow: 0 1px 2px rgba(var(--shadow), 0.35);
+}
+.fthumb::after {
+  content: "";
+  position: absolute;
+  left: 2px;
+  right: 2px;
+  top: 50%;
+  height: 1px;
+  margin-top: -0.5px;
+  background: var(--mc);
+  opacity: 0.8;
+}
+
 .klab {
   font-family: ui-monospace, "SF Mono", monospace;
   font-size: 8.5px;
@@ -289,6 +361,30 @@ select {
   white-space: nowrap;
 }
 .kwrap.live .klab { color: var(--ink); }
+
+/* segmented buttons -- short option lists read better as a row of little
+   labelled pads than as a dropdown, with the active one lit in accent */
+.seg { display: flex; gap: 2px; align-self: flex-end; }
+.seg button {
+  font-family: ui-monospace, "SF Mono", monospace;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--well-dim);
+  background: var(--well);
+  border: 1px solid var(--panel-edge);
+  border-radius: 3px;
+  padding: 4px 5px;
+  min-width: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+.seg button:hover { color: var(--well-ink); }
+.seg button.on {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff2e6;
+}
 
 /* ports */
 .mports {

@@ -22,6 +22,19 @@ dependencies, three files.
   restrained. Modules are added through a category → module sheet
   (`#addPanel`, opened by `addBtn`/`openAddPanel()` in `script.js`) instead
   of one long row of ~23 buttons.
+- **Controls** aren't all the same knob, for the same reason a hardware
+  panel isn't: the shape and size say what a parameter is for. A knob spec
+  in `TYPES` takes `ctrl: "fader"` for a level/mix (the envelope's ADSR
+  bank, an amp or the speaker's volume, every pedal's mix), `size: "lg"`
+  for the one parameter you reach for first, `size: "sm"` with
+  `cap: "dark"` for secondary trim, and `cap: "accent"` for the control
+  that defines the module (a filter's cutoff, a distortion's drive). Short
+  option lists (`seg: true` on a select, with optional `short` labels)
+  render as a row of little labelled pads with the active one lit in
+  accent, rather than a dropdown; longer lists (a sequencer's scale, the
+  clock rates, swap) stay dropdowns. `setKnobT()` drives either a knob's
+  rotation or a fader's cap position from the same normalized 0-1 value,
+  so everything else — curves, save/load, hot-swap — is unchanged.
 - **Modules** (`TYPES` in `script.js`) each own a few AudioNodes and
   declare their knobs, selects, and ports. Twenty-three of them: oscillator,
   lfo, envelope, amp, filter, a master clock, step sequencer, arpeggiator,
