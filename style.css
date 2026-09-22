@@ -371,6 +371,13 @@ select {
 .kwrap.shaped .knob {
   background: none;
   border: 0;
+  /* the base .knob rule's box-shadow is an inset relief clipped to its
+     circular border-box, not to the masked silhouette -- left in place,
+     it bleeds a faint tint into every concave scoop (the trilobe's
+     valleys, the collet's flutes) that isn't actually part of the shape.
+     The drop-shadow filter below is the real relief here: it follows the
+     mask's alpha, so it only ever falls where the cap actually is. */
+  box-shadow: none;
   filter: drop-shadow(0 1px 1px rgba(40, 32, 18, 0.45)) drop-shadow(0 2px 3px rgba(40, 32, 18, 0.22));
 }
 .kwrap.shaped .kdot {
@@ -437,6 +444,12 @@ select {
 /* arc: the value drawn as a ring around a small cap */
 .kwrap.shape-arc .knob {
   border-color: transparent;
+  /* same leak as .shaped above: the base rule's inset box-shadow is
+     clipped to the circular border-box, not to where this conic gradient
+     is actually opaque, so it was tinting the transparent 90° gap at the
+     bottom of the ring. The ring doesn't need cap relief of its own --
+     the inner ::before disc below already has it. */
+  box-shadow: none;
   background: conic-gradient(from 225deg,
     var(--mc) 0deg calc(var(--val, 0) * 270deg),
     rgba(40, 32, 18, 0.15) calc(var(--val, 0) * 270deg) 270deg,
