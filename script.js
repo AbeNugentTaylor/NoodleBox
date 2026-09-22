@@ -412,7 +412,7 @@ const TYPES = {
     ],
     knobs: [
       { id: "steps", label: "steps", min: 1, max: 32, curve: "lin", step: 1, v0: 8, fmt: fInt, ctrl: "stepper" },
-      { id: "tempo", label: "tempo", min: 40, max: 240, curve: "lin", v0: 120, fmt: fBpm, size: "lg", shape: "scalloped" },
+      { id: "tempo", label: "tempo", min: 40, max: 240, curve: "lin", v0: 120, fmt: fBpm, size: "lg", shape: "notched" },
       { id: "gate", label: "gate len", min: 0.05, max: 0.95, curve: "lin", v0: 0.6, fmt: fPct, size: "sm", cap: "dark" },
       { id: "glide", label: "glide", min: 0, max: 0.4, curve: "cu", v0: 0, fmt: fS, size: "sm", shape: "slot" },
     ],
@@ -588,7 +588,7 @@ const TYPES = {
   verb: {
     title: "reverb", color: "#3d55a3",
     knobs: [
-      { id: "size", label: "size", min: 0.3, max: 5, curve: "log", v0: 2, fmt: fS, size: "lg", shape: "fluted" },
+      { id: "size", label: "size", min: 0.3, max: 5, curve: "log", v0: 2, fmt: fS, size: "lg", shape: "star" },
       { id: "mix", label: "mix", min: 0, max: 1, curve: "lin", v0: 0.3, fmt: fPct, ctrl: "fader" },
     ],
     ins: [{ id: "in", kind: "audio", strict: true, help: "the signal to add reverb to." }],
@@ -742,7 +742,7 @@ const TYPES = {
   hat: {
     title: "hihat", color: "#6b6353",
     knobs: [
-      { id: "tone", label: "tone", min: 3000, max: 12000, curve: "log", v0: 7000, fmt: fHz },
+      { id: "tone", label: "tone", min: 3000, max: 12000, curve: "log", v0: 7000, fmt: fHz, size: "lg", shape: "pinwheel" },
       { id: "decay", label: "decay", min: 0.02, max: 0.8, curve: "log", v0: 0.08, fmt: fS, size: "sm", cap: "dark" },
     ],
     ins: [{ id: "gate", kind: "gate", help: "triggers a hihat tick — a short decay sounds closed, a long one open." }],
@@ -777,7 +777,7 @@ const TYPES = {
   clap: {
     title: "clap", color: "#a8346a",
     knobs: [
-      { id: "tone", label: "tone", min: 800, max: 3000, curve: "log", v0: 1500, fmt: fHz, shape: "arc" },
+      { id: "tone", label: "tone", min: 800, max: 3000, curve: "log", v0: 1500, fmt: fHz, size: "lg", shape: "star" },
       { id: "spread", label: "spread", min: 0.005, max: 0.05, curve: "lin", v0: 0.02, fmt: fS, size: "sm", shape: "slot" },
       { id: "decay", label: "decay", min: 0.05, max: 0.6, curve: "log", v0: 0.2, fmt: fS, size: "sm", cap: "dark" },
     ],
@@ -818,7 +818,7 @@ const TYPES = {
   cymbal: {
     title: "cymbal", color: "#8a7226",
     knobs: [
-      { id: "tone", label: "tone", min: 3000, max: 10000, curve: "log", v0: 5000, fmt: fHz },
+      { id: "tone", label: "tone", min: 3000, max: 10000, curve: "log", v0: 5000, fmt: fHz, size: "lg", shape: "fluted" },
       { id: "shimmer", label: "shimmer", min: 0, max: 0.95, curve: "lin", v0: 0.5, fmt: fPct, size: "sm", shape: "slot" },
       { id: "decay", label: "decay", min: 0.3, max: 3, curve: "log", v0: 1.2, fmt: fS, size: "sm", cap: "dark" },
     ],
@@ -1079,6 +1079,10 @@ for (const t of Object.keys(TYPES)) {
 
 /* ---------------- knobs / selects ---------------- */
 
+/* shapes whose cap is an SVG-masked outline rather than a border-drawn
+   circle/box -- they share one set of rules under the `shaped` class */
+const MASK_SHAPES = new Set(["teardrop", "trilobe", "scalloped", "star", "pinwheel", "notched"]);
+
 function knobDef(m, id) { return m.spec.knobs.find((k) => k.id === id); }
 function knobVal(m, id) {
   const k = knobDef(m, id);
@@ -1325,7 +1329,7 @@ function addModule(type, x, y) {
       (k.ctrl ? " " + k.ctrl : "") +
       (k.size ? " " + k.size : "") +
       (k.cap ? " cap-" + k.cap : "") +
-      (k.shape ? " shape-" + k.shape : "");
+      (k.shape ? " shape-" + k.shape + (MASK_SHAPES.has(k.shape) ? " shaped" : "") : "");
     w.innerHTML = (k.ctrl === "fader"
       ? '<div class="ftrack"><div class="fthumb"></div></div>'
       : k.ctrl === "stepper"

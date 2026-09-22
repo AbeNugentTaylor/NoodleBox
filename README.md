@@ -30,19 +30,28 @@ dependencies, three files.
   `cap: "dark"` for secondary trim, and `cap: "accent"` for the control
   that defines the module (a filter's cutoff, a distortion's drive).
   `shape:` then varies the silhouette rather than just the size. A border
-  can only ever draw a circle or a rounded box, so the shapes that aren't
-  either — a rounded-back teardrop (`teardrop`) on the signature control,
-  a three-lobed clover (`trilobe`) and an eight-lobe collet (`scalloped`)
-  on the hero ones — mask the *rotating* cap with an inline SVG outline,
-  so the whole cap is the shape and it turns with the value. (Their
+  can only ever draw a circle or a rounded box, so the shapes that are
+  neither mask the *rotating* cap with an inline SVG outline, which is
+  what lets the whole cap be the shape and turn with the value. Those are
+  a rounded-back teardrop (`teardrop`) on the signature control, three
+  flared arms with deep concave scoops (`trilobe`), an eight-flute collet
+  (`scalloped`), a five-point star with concave flanks (`star`), four
+  swept blades (`pinwheel`), and a disc with round finger-bites out of
+  the rim (`notched`). All but the teardrop come from a single
+  construction in `tools/knobshapes.py` — arm tips at some radius joined
+  by valleys diving back toward the centre, each valley a quadratic whose
+  control point is solved so the curve passes exactly through the
+  valley's low point — so lobe count, scoop depth and blade sweep are
+  just numbers to that generator rather than hand-tuned path data. (Their
   drop-shadow has to sit on the parent: a filter on the masked element is
   computed before the mask clips it, and would be thrown away.) The rest
   stay border-drawn: a knurled collar (`fluted`), a flat screwdriver trim
   pot (`slot`) for calibration, a value ring drawn straight from the
   parameter's own 0-1 value (`arc`) where the amount is worth reading at
-  a glance, and a squircle (`square`) on the controls that pick a note. Counts rather than sweeps (a sequencer's step count,
-  the arp's octaves, crush's bit depth) use `ctrl: "stepper"`, a −/+ pair
-  either side of a small readout. Short
+  a glance, and a squircle (`square`) on the controls that pick a note.
+  Counts rather than sweeps (a sequencer's step count, the arp's octaves,
+  crush's bit depth) use `ctrl: "stepper"`, a −/+ pair either side of a
+  small readout. Short
   option lists (`seg: true` on a select, with optional `short` labels)
   render as a row of little labelled pads with the active one lit in
   accent, rather than a dropdown; longer lists (a sequencer's scale, the

@@ -338,62 +338,75 @@ select {
 }
 
 /* Shaped caps. A border can only ever draw a circle or a rounded box, so
-   these mask the rotating cap (.kdot) with an inline SVG outline instead:
-   the whole cap is the shape and it turns with the value, which is what
-   makes a lobed or pointed knob readable at a glance. The drop-shadow
-   sits on the parent, since a filter on the masked element itself would
-   be computed before the mask clipped it and get thrown away. */
-.kwrap.shape-teardrop .knob,
-.kwrap.shape-trilobe .knob,
-.kwrap.shape-scalloped .knob {
+   the shapes that are neither mask the *rotating* cap with an inline SVG
+   outline: the whole cap is the shape and it turns with the value, which
+   is what makes a lobed or pointed knob readable. All but the teardrop
+   come from one construction -- arm tips at some radius joined by valleys
+   diving back toward the centre, each valley a quadratic whose control
+   point is solved so the curve passes exactly through the valley's low
+   point -- so lobe count, depth and blade sweep are all just numbers.
+   The drop-shadow sits on the parent: a filter on the masked element
+   itself is computed before the mask clips it, and would be discarded. */
+.kwrap.shaped .knob {
   background: none;
   border: 0;
   filter: drop-shadow(0 1px 1.5px rgba(40, 32, 18, 0.42));
 }
-.kwrap.shape-teardrop .kdot,
-.kwrap.shape-trilobe .kdot,
-.kwrap.shape-scalloped .kdot {
+.kwrap.shaped .kdot {
   background: radial-gradient(circle at 36% 28%, #fffdf7 0%, #eae1c8 55%, #c3b48f 100%);
   -webkit-mask-repeat: no-repeat;
   mask-repeat: no-repeat;
   -webkit-mask-size: 100% 100%;
   mask-size: 100% 100%;
 }
-.kwrap.shape-teardrop.cap-accent .kdot,
-.kwrap.shape-trilobe.cap-accent .kdot,
-.kwrap.shape-scalloped.cap-accent .kdot {
+.kwrap.shaped.cap-accent .kdot {
   background: radial-gradient(circle at 36% 28%, #f0824f 0%, #d24b1d 55%, #9c3510 100%);
 }
-.kwrap.shape-teardrop.cap-dark .kdot,
-.kwrap.shape-trilobe.cap-dark .kdot,
-.kwrap.shape-scalloped.cap-dark .kdot {
+.kwrap.shaped.cap-dark .kdot {
   background: radial-gradient(circle at 36% 28%, #5a5343 0%, #2a2419 60%, #14100a 100%);
 }
+/* the lobes repeat, so these still need a tick to resolve the rotation */
+.kwrap.shaped .kdot::after { background: #46402f; }
+.kwrap.shaped.cap-dark .kdot::after { background: var(--well-ink); }
 
 /* teardrop: a triangle with a rounded back -- the point is the indicator,
    so it needs no separate tick */
 .kwrap.shape-teardrop .kdot {
-  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M50 4 C61 22 86 34 86 58 A36 36 0 1 1 14 58 C14 34 39 22 50 4 Z' fill='%23fff'/%3E%3C/svg%3E");
-  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M50 4 C61 22 86 34 86 58 A36 36 0 1 1 14 58 C14 34 39 22 50 4 Z' fill='%23fff'/%3E%3C/svg%3E");
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath fill='%23fff' d='M50 4C61 22 86 34 86 58A36 36 0 1 1 14 58C14 34 39 22 50 4Z'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath fill='%23fff' d='M50 4C61 22 86 34 86 58A36 36 0 1 1 14 58C14 34 39 22 50 4Z'/%3E%3C/svg%3E");
 }
 .kwrap.shape-teardrop .kdot::after { display: none; }
 
-/* trilobe: a three-lobed clover cap */
+/* trilobe: three flared arms with deep concave scoops between them */
 .kwrap.shape-trilobe .kdot {
-  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath fill='%23fff' d='M35 4A34 34 0 0 1 65 4Q53.49 48 97.3 60A34 34 0 0 1 82.3 86Q50 54 17.7 86A34 34 0 0 1 2.7 60Q46.51 48 35 4Z'/%3E%3C/svg%3E");
-  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath fill='%23fff' d='M35 4A34 34 0 0 1 65 4Q53.49 48 97.3 60A34 34 0 0 1 82.3 86Q50 54 17.7 86A34 34 0 0 1 2.7 60Q46.51 48 35 4Z'/%3E%3C/svg%3E");
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath fill='%23fff' d='M35 4A34 34 0 0 1 65 4Q53.47 48 97.34 60.01A34 34 0 0 1 82.34 85.99Q50 54.01 17.66 85.99A34 34 0 0 1 2.66 60.01Q46.53 48 35 4Z'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath fill='%23fff' d='M35 4A34 34 0 0 1 65 4Q53.47 48 97.34 60.01A34 34 0 0 1 82.34 85.99Q50 54.01 17.66 85.99A34 34 0 0 1 2.66 60.01Q46.53 48 35 4Z'/%3E%3C/svg%3E");
 }
 
-/* scalloped: a six-lobe collet knob */
+/* scalloped: eight deep flutes cut into a solid collet */
 .kwrap.shape-scalloped .kdot {
-  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cg fill='%23fff'%3E%3Ccircle cx='50' cy='20' r='13'/%3E%3Ccircle cx='71' cy='29' r='13'/%3E%3Ccircle cx='80' cy='50' r='13'/%3E%3Ccircle cx='71' cy='71' r='13'/%3E%3Ccircle cx='50' cy='80' r='13'/%3E%3Ccircle cx='29' cy='71' r='13'/%3E%3Ccircle cx='20' cy='50' r='13'/%3E%3Ccircle cx='29' cy='29' r='13'/%3E%3Ccircle cx='50' cy='50' r='34'/%3E%3C/g%3E%3C/svg%3E");
-  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cg fill='%23fff'%3E%3Ccircle cx='50' cy='20' r='13'/%3E%3Ccircle cx='71' cy='29' r='13'/%3E%3Ccircle cx='80' cy='50' r='13'/%3E%3Ccircle cx='71' cy='71' r='13'/%3E%3Ccircle cx='50' cy='80' r='13'/%3E%3Ccircle cx='29' cy='71' r='13'/%3E%3Ccircle cx='20' cy='50' r='13'/%3E%3Ccircle cx='29' cy='29' r='13'/%3E%3Ccircle cx='50' cy='50' r='34'/%3E%3C/g%3E%3C/svg%3E");
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath fill='%23fff' d='M42 10A13 13 0 0 1 58 10Q56.88 33.39 72.63 16.06A13 13 0 0 1 83.94 27.37Q66.61 43.12 90 42A13 13 0 0 1 90 58Q66.61 56.88 83.94 72.63A13 13 0 0 1 72.63 83.94Q56.88 66.61 58 90A13 13 0 0 1 42 90Q43.12 66.61 27.37 83.94A13 13 0 0 1 16.06 72.63Q33.39 56.88 10 58A13 13 0 0 1 10 42Q33.39 43.12 16.06 27.37A13 13 0 0 1 27.37 16.06Q43.12 33.39 42 10Z'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath fill='%23fff' d='M42 10A13 13 0 0 1 58 10Q56.88 33.39 72.63 16.06A13 13 0 0 1 83.94 27.37Q66.61 43.12 90 42A13 13 0 0 1 90 58Q66.61 56.88 83.94 72.63A13 13 0 0 1 72.63 83.94Q56.88 66.61 58 90A13 13 0 0 1 42 90Q43.12 66.61 27.37 83.94A13 13 0 0 1 16.06 72.63Q33.39 56.88 10 58A13 13 0 0 1 10 42Q33.39 43.12 16.06 27.37A13 13 0 0 1 27.37 16.06Q43.12 33.39 42 10Z'/%3E%3C/svg%3E");
 }
-/* the lobes repeat every 120°/60°, so these still need a tick to read */
-.kwrap.shape-trilobe .kdot::after,
-.kwrap.shape-scalloped .kdot::after { background: #46402f; }
-.kwrap.shape-trilobe.cap-dark .kdot::after,
-.kwrap.shape-scalloped.cap-dark .kdot::after { background: var(--well-ink); }
+
+/* star: five sharp points with concave flanks */
+.kwrap.shape-star .kdot {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath fill='%23fff' d='M50 3Q59.39 37.07 94.7 35.48Q65.19 54.94 77.63 88.02Q50 65.98 22.37 88.02Q34.81 54.94 5.3 35.48Q40.61 37.07 50 3Z'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath fill='%23fff' d='M50 3Q59.39 37.07 94.7 35.48Q65.19 54.94 77.63 88.02Q50 65.98 22.37 88.02Q34.81 54.94 5.3 35.48Q40.61 37.07 50 3Z'/%3E%3C/svg%3E");
+}
+
+/* pinwheel: four swept blades -- the tip chord is tilted off perpendicular
+   and the valleys pushed round, which is what reads as sweep */
+.kwrap.shape-pinwheel .kdot {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath fill='%23fff' d='M41.34 1A16 16 0 0 1 58.66 11Q62.77 59.51 99 41.34A16 16 0 0 1 89 58.66Q40.49 62.77 58.66 99A16 16 0 0 1 41.34 89Q37.23 40.49 1 58.66A16 16 0 0 1 11 41.34Q59.51 37.23 41.34 1Z'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath fill='%23fff' d='M41.34 1A16 16 0 0 1 58.66 11Q62.77 59.51 99 41.34A16 16 0 0 1 89 58.66Q40.49 62.77 58.66 99A16 16 0 0 1 41.34 89Q37.23 40.49 1 58.66A16 16 0 0 1 11 41.34Q59.51 37.23 41.34 1Z'/%3E%3C/svg%3E");
+}
+
+/* notched: a disc with round finger-bites taken out of the rim */
+.kwrap.shape-notched .kdot {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath fill='%23fff' d='M97.49 43A48 48 0 0 1 67.68 94.62A18 18 0 0 0 32.32 94.62A48 48 0 0 1 2.51 43A18 18 0 0 0 20.19 12.38A48 48 0 0 1 79.81 12.38A18 18 0 0 0 97.49 43Z'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath fill='%23fff' d='M97.49 43A48 48 0 0 1 67.68 94.62A18 18 0 0 0 32.32 94.62A48 48 0 0 1 2.51 43A18 18 0 0 0 20.19 12.38A48 48 0 0 1 79.81 12.38A18 18 0 0 0 97.49 43Z'/%3E%3C/svg%3E");
+}
 
 /* slot: a flat metal trim pot you'd set once with a screwdriver */
 .kwrap.shape-slot .knob {
