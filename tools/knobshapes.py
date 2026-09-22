@@ -1,13 +1,14 @@
 """Generates the SVG outlines for Noodle Box's masked knob caps.
 
-Run `python3 tools/knobshapes.py` to print each path and write a
-shapes-preview.html showing them all at 200px -- worth looking at before
+Run `python3 tools/knobshapes.py` to print each path and write
+tools/shapes-preview.html showing them all at 200px -- worth looking at before
 wiring a new shape in, since a silhouette change that matters at 200px
 can be invisible on a 36px knob. Paste the printed path into the
 matching `.kwrap.shape-* .kdot` rule in style.css.
 """
 
 import math
+import os
 C = 50.0
 
 def f(x):
@@ -76,7 +77,7 @@ cells = "".join(
     "<figure><svg viewBox='0 0 100 100' width='200' height='200'>"
     "<path fill='#efe8d6' stroke='#c3b48f' stroke-width='0.75' d='%s'/></svg>"
     "<figcaption>%s</figcaption></figure>" % (v, k) for k, v in SHAPES.items())
-open("shapes-preview.html", "w").write(
+open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "shapes-preview.html"), "w").write(
   "<!doctype html><meta charset=utf-8><body style=\"margin:0;background:#e9e2d2;"
   "display:flex;flex-wrap:wrap;gap:6px;padding:16px;font:12px ui-monospace,monospace;color:#241f17\">"
   + cells.replace("<figure>", "<figure style='margin:0;text-align:center'>") + "</body>")
