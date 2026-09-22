@@ -316,6 +316,113 @@ select {
 .kwrap.cap-dark .kdot::after { background: var(--well-ink); }
 .kwrap.cap-accent .kdot::after { background: #2b1206; }
 
+/* ---- knob shapes ----
+   Silhouettes, not just sizes: a knurled collar for the hero control, a
+   chicken-head pointer for the signature one, a flat screwdriver trim pot
+   for calibration, a value ring where the amount is worth reading at a
+   glance, a squircle for note pickers. These rules come after the size
+   and cap rules on purpose -- equal specificity, so source order settles
+   which one wins on a knob that carries both. */
+
+/* fluted: a knurled collar that turns with the cap */
+.kwrap.shape-fluted .kdot::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: repeating-conic-gradient(from 0deg,
+    rgba(38, 30, 16, 0.26) 0deg 9deg,
+    rgba(255, 252, 240, 0.26) 9deg 18deg);
+  -webkit-mask: radial-gradient(circle, transparent 52%, #000 54%);
+  mask: radial-gradient(circle, transparent 52%, #000 54%);
+}
+
+/* pointer: a chicken-head wedge reaching just past the rim */
+.kwrap.shape-pointer .kdot::after {
+  top: -4px;
+  width: 0;
+  height: 0;
+  margin-left: -4.5px;
+  border-radius: 0;
+  background: none;
+  border-left: 4.5px solid transparent;
+  border-right: 4.5px solid transparent;
+  border-bottom: 11px solid var(--mc);
+}
+.kwrap.shape-pointer.cap-accent .kdot::after { border-bottom-color: #2b1206; }
+.kwrap.shape-pointer.cap-dark .kdot::after { border-bottom-color: var(--well-ink); }
+
+/* slot: a flat metal trim pot you'd set once with a screwdriver */
+.kwrap.shape-slot .knob {
+  background: radial-gradient(circle at 50% 35%, #7b7364, #3b362c 80%);
+  border-color: #2a251d;
+}
+.kwrap.shape-slot .kdot::after {
+  top: 50%;
+  left: 3px;
+  right: 3px;
+  width: auto;
+  height: 2px;
+  margin-top: -1px;
+  margin-left: 0;
+  border-radius: 1px;
+  background: #17130d;
+}
+
+/* arc: the value drawn as a ring around a small cap */
+.kwrap.shape-arc .knob {
+  border-color: transparent;
+  background: conic-gradient(from 225deg,
+    var(--mc) 0deg calc(var(--val, 0) * 270deg),
+    rgba(40, 32, 18, 0.15) calc(var(--val, 0) * 270deg) 270deg,
+    transparent 270deg 360deg);
+}
+.kwrap.shape-arc .knob::before {
+  content: "";
+  position: absolute;
+  inset: 5px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fffdf7, #ddd2b4 75%);
+  border: 1px solid var(--panel-edge);
+}
+.kwrap.shape-arc.sm .knob::before { inset: 3px; }
+.kwrap.shape-arc .kdot::after { top: 7px; height: 5px; }
+.kwrap.shape-arc.sm .kdot::after { top: 5px; height: 4px; }
+.kwrap.shape-arc.lg .kdot::after { top: 7px; height: 8px; }
+
+/* square: a squircle cap, for the controls that pick a note */
+.kwrap.shape-square .knob { border-radius: 7px; }
+.kwrap.shape-square.sm .knob { border-radius: 5px; }
+.kwrap.shape-square.lg .knob { border-radius: 9px; }
+
+/* stepper: minus/plus pads either side of a little readout, for the
+   parameters that are a count rather than a sweep */
+.step-ctl { display: flex; align-items: stretch; gap: 2px; }
+.step-ctl button {
+  font-family: ui-monospace, "SF Mono", monospace;
+  font-size: 11px;
+  line-height: 1;
+  width: 16px;
+  padding: 0;
+  color: var(--well-ink);
+  background: var(--well);
+  border: 1px solid var(--panel-edge);
+  border-radius: 3px;
+  cursor: pointer;
+}
+.step-ctl button:hover { background: var(--accent); border-color: var(--accent); }
+.sval {
+  font-family: ui-monospace, "SF Mono", monospace;
+  font-size: 10px;
+  min-width: 26px;
+  padding: 3px 2px;
+  text-align: center;
+  color: var(--well-ink);
+  background: var(--well);
+  border: 1px solid var(--panel-edge);
+  border-radius: 3px;
+}
+
 /* faders -- a recessed groove with a light cap, for levels and mixes */
 .ftrack {
   position: relative;

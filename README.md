@@ -28,7 +28,16 @@ dependencies, three files.
   bank, an amp or the speaker's volume, every pedal's mix), `size: "lg"`
   for the one parameter you reach for first, `size: "sm"` with
   `cap: "dark"` for secondary trim, and `cap: "accent"` for the control
-  that defines the module (a filter's cutoff, a distortion's drive). Short
+  that defines the module (a filter's cutoff, a distortion's drive).
+  `shape:` then varies the silhouette rather than just the size — a
+  knurled collar (`fluted`) on the hero control, a chicken-head pointer
+  that reaches past the rim (`pointer`) on the signature one, a flat
+  screwdriver trim pot (`slot`) for calibration, a value ring drawn
+  straight from the parameter's own 0-1 value (`arc`) where the amount is
+  worth reading at a glance, and a squircle (`square`) on the controls
+  that pick a note. Counts rather than sweeps (a sequencer's step count,
+  the arp's octaves, crush's bit depth) use `ctrl: "stepper"`, a −/+ pair
+  either side of a small readout. Short
   option lists (`seg: true` on a select, with optional `short` labels)
   render as a row of little labelled pads with the active one lit in
   accent, rather than a dropdown; longer lists (a sequencer's scale, the
