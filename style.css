@@ -380,8 +380,8 @@ select {
 
 /* trilobe: a three-lobed clover cap */
 .kwrap.shape-trilobe .kdot {
-  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cg fill='%23fff'%3E%3Ccircle cx='50' cy='26' r='25'/%3E%3Ccircle cx='28' cy='64' r='25'/%3E%3Ccircle cx='72' cy='64' r='25'/%3E%3Ccircle cx='50' cy='52' r='28'/%3E%3C/g%3E%3C/svg%3E");
-  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cg fill='%23fff'%3E%3Ccircle cx='50' cy='26' r='25'/%3E%3Ccircle cx='28' cy='64' r='25'/%3E%3Ccircle cx='72' cy='64' r='25'/%3E%3Ccircle cx='50' cy='52' r='28'/%3E%3C/g%3E%3C/svg%3E");
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath fill='%23fff' d='M35 4A34 34 0 0 1 65 4Q53.49 48 97.3 60A34 34 0 0 1 82.3 86Q50 54 17.7 86A34 34 0 0 1 2.7 60Q46.51 48 35 4Z'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath fill='%23fff' d='M35 4A34 34 0 0 1 65 4Q53.49 48 97.3 60A34 34 0 0 1 82.3 86Q50 54 17.7 86A34 34 0 0 1 2.7 60Q46.51 48 35 4Z'/%3E%3C/svg%3E");
 }
 
 /* scalloped: a six-lobe collet knob */
