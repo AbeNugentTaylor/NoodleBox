@@ -96,7 +96,7 @@ const field = document.getElementById("field");
 const fieldSizer = document.getElementById("fieldSizer");
 const work = document.getElementById("work");
 const svg = document.getElementById("cables");
-const CABLE_COLOR = { audio: "#6ee7ff", gate: "#ffb066" };
+const CABLE_COLOR = { audio: "#2f8f86", gate: "#bd6a1f" }; // matches --audio/--gate in style.css
 
 /* board zoom + sizing: #field is a native-space coordinate system (module
    x/y, port and cable math all live there) that's just visually scaled;
@@ -248,7 +248,7 @@ function snapToScale(n, key) {
 
 const TYPES = {
   osc: {
-    title: "oscillator", color: "#7cd6ff",
+    title: "oscillator", color: "#2f6ea3",
     selects: [{ id: "wave", opts: ["sine", "triangle", "sawtooth", "square"], v0: "sawtooth" }],
     knobs: [
       { id: "freq", label: "freq", min: 0, max: 2000, curve: "sq", v0: 110, fmt: fHz },
@@ -275,7 +275,7 @@ const TYPES = {
   },
 
   lfo: {
-    title: "lfo", color: "#c39bff",
+    title: "lfo", color: "#6b4fa8",
     selects: [{ id: "wave", opts: ["sine", "triangle", "sawtooth", "square"], v0: "sine" }],
     knobs: [{ id: "rate", label: "rate", min: 0.02, max: 30, curve: "log", v0: 2, fmt: fHz }],
     ins: [],
@@ -293,7 +293,7 @@ const TYPES = {
   },
 
   env: {
-    title: "envelope", color: "#ffd166",
+    title: "envelope", color: "#a6771c",
     knobs: [
       { id: "atk", label: "attack", min: 0.002, max: 3, curve: "log", v0: 0.005, fmt: fS },
       { id: "dec", label: "decay", min: 0.01, max: 4, curve: "log", v0: 0.25, fmt: fS },
@@ -326,7 +326,7 @@ const TYPES = {
   },
 
   amp: {
-    title: "amp", color: "#7cffb2",
+    title: "amp", color: "#2f8f5c",
     knobs: [{ id: "level", label: "level", min: 0, max: 1, curve: "lin", v0: 0.7, fmt: fPct }],
     ins: [
       { id: "in", kind: "audio", strict: true, help: "the signal to amplify — needs an actual waveform, not a CV." },
@@ -343,7 +343,7 @@ const TYPES = {
   },
 
   filter: {
-    title: "filter", color: "#ffab6b",
+    title: "filter", color: "#b5611f",
     selects: [{ id: "type", opts: ["lowpass", "highpass", "bandpass"], v0: "lowpass" }],
     knobs: [
       { id: "cut", label: "cutoff", min: 40, max: 12000, curve: "log", v0: 1200, fmt: fHz },
@@ -373,7 +373,7 @@ const TYPES = {
   },
 
   clock: {
-    title: "clock", color: "#66e0a3",
+    title: "clock", color: "#1f7a5e",
     knobs: [{ id: "tempo", label: "tempo", min: 40, max: 240, curve: "lin", v0: 120, fmt: fBpm }],
     ins: [],
     outs: [{ id: "gate", kind: "gate", help: "a steady pulse at the “tempo” knob — feed it into sequencers' or arpeggios' “clock” input to sync them to one shared master beat, then set each one's own “rate” to multiply or divide against it." }],
@@ -386,7 +386,7 @@ const TYPES = {
   },
 
   noise: {
-    title: "noise", color: "#aab6d6",
+    title: "noise", color: "#56607a",
     knobs: [{ id: "level", label: "level", min: 0, max: 1, curve: "sq", v0: 0.5, fmt: fPct }],
     ins: [],
     outs: [{ id: "out", kind: "audio", help: "steady white noise, shaped by the “level” knob." }],
@@ -405,7 +405,7 @@ const TYPES = {
   },
 
   seq: {
-    title: "sequencer", color: "#ff8bd0",
+    title: "sequencer", color: "#a33d78",
     selects: [
       { id: "scale", opts: ["chromatic", "major", "minor", "pentaMaj", "pentaMin", "blues", "majTriad", "minTriad"], v0: "chromatic" },
       { id: "rate", opts: ["÷8", "÷4", "÷2", "x1", "x2", "x4", "x8"], v0: "x1" },
@@ -469,7 +469,7 @@ const TYPES = {
   },
 
   arp: {
-    title: "arpeggio", color: "#ff8b7c",
+    title: "arpeggio", color: "#a8432f",
     selects: [
       { id: "chord", opts: ["minor", "major", "min7", "maj7", "sus4"], v0: "minor" },
       { id: "pattern", opts: ["up", "down", "up-down", "random"], v0: "up" },
@@ -527,7 +527,7 @@ const TYPES = {
   },
 
   delay: {
-    title: "delay", color: "#6bd7c9",
+    title: "delay", color: "#1f7d78",
     knobs: [
       { id: "time", label: "time", min: 0.03, max: 1, curve: "log", v0: 0.3, fmt: fS },
       { id: "fb", label: "feedback", min: 0, max: 0.9, curve: "lin", v0: 0.35, fmt: fPct },
@@ -556,7 +556,7 @@ const TYPES = {
   },
 
   dist: {
-    title: "distort", color: "#ff5c6c",
+    title: "distort", color: "#a4263a",
     knobs: [
       { id: "drive", label: "drive", min: 1, max: 60, curve: "log", v0: 8, fmt: fNum },
       { id: "level", label: "level", min: 0, max: 1, curve: "lin", v0: 0.6, fmt: fPct },
@@ -585,7 +585,7 @@ const TYPES = {
   },
 
   verb: {
-    title: "reverb", color: "#8ba7ff",
+    title: "reverb", color: "#3d55a3",
     knobs: [
       { id: "size", label: "size", min: 0.3, max: 5, curve: "log", v0: 2, fmt: fS },
       { id: "mix", label: "mix", min: 0, max: 1, curve: "lin", v0: 0.3, fmt: fPct },
@@ -615,7 +615,7 @@ const TYPES = {
   },
 
   out: {
-    title: "speaker", color: "#e8ecff",
+    title: "speaker", color: "#4a453a",
     knobs: [{ id: "vol", label: "volume", min: 0, max: 1, curve: "lin", v0: 0.8, fmt: fPct }],
     ins: [{ id: "in", kind: "audio", strict: true, help: "plug the end of your patch in here to actually hear it." }],
     outs: [],
@@ -656,7 +656,7 @@ const TYPES = {
      tap, cables stay put) ---- */
 
   kick: {
-    title: "kick", color: "#e8555c",
+    title: "kick", color: "#8f3a2a",
     knobs: [
       { id: "tune", label: "tune", min: 30, max: 120, curve: "lin", v0: 55, fmt: fHz },
       { id: "punch", label: "punch", min: 0, max: 1, curve: "lin", v0: 0.6, fmt: fPct },
@@ -690,7 +690,7 @@ const TYPES = {
   },
 
   snare: {
-    title: "snare", color: "#f2a154",
+    title: "snare", color: "#b0591a",
     knobs: [
       { id: "tone", label: "tone", min: 100, max: 400, curve: "lin", v0: 180, fmt: fHz },
       { id: "snap", label: "snap", min: 0, max: 1, curve: "lin", v0: 0.6, fmt: fPct },
@@ -739,7 +739,7 @@ const TYPES = {
   },
 
   hat: {
-    title: "hihat", color: "#dfe4ee",
+    title: "hihat", color: "#6b6353",
     knobs: [
       { id: "tone", label: "tone", min: 3000, max: 12000, curve: "log", v0: 7000, fmt: fHz },
       { id: "decay", label: "decay", min: 0.02, max: 0.8, curve: "log", v0: 0.08, fmt: fS },
@@ -774,7 +774,7 @@ const TYPES = {
   },
 
   clap: {
-    title: "clap", color: "#f0629e",
+    title: "clap", color: "#a8346a",
     knobs: [
       { id: "tone", label: "tone", min: 800, max: 3000, curve: "log", v0: 1500, fmt: fHz },
       { id: "spread", label: "spread", min: 0.005, max: 0.05, curve: "lin", v0: 0.02, fmt: fS },
@@ -815,7 +815,7 @@ const TYPES = {
   },
 
   cymbal: {
-    title: "cymbal", color: "#e8dcae",
+    title: "cymbal", color: "#8a7226",
     knobs: [
       { id: "tone", label: "tone", min: 3000, max: 10000, curve: "log", v0: 5000, fmt: fHz },
       { id: "shimmer", label: "shimmer", min: 0, max: 0.95, curve: "lin", v0: 0.5, fmt: fPct },
@@ -864,7 +864,7 @@ const TYPES = {
   },
 
   pluck: {
-    title: "pluck", color: "#9be89f",
+    title: "pluck", color: "#5c8f2e",
     knobs: [
       { id: "pitch", label: "pitch", min: 36, max: 84, curve: "lin", step: 1, v0: 57, fmt: fNote },
       { id: "damping", label: "damping", min: 800, max: 8000, curve: "log", v0: 3500, fmt: fHz },
@@ -919,7 +919,7 @@ const TYPES = {
      one swappable pedalboard ---- */
 
   fuzz: {
-    title: "fuzz", color: "#ff4d7a",
+    title: "fuzz", color: "#a3244f",
     knobs: [
       { id: "drive", label: "drive", min: 2, max: 100, curve: "log", v0: 25, fmt: fNum },
       { id: "bias", label: "bias", min: -0.5, max: 0.5, curve: "lin", v0: 0.15, fmt: fNum },
@@ -946,7 +946,7 @@ const TYPES = {
   },
 
   crush: {
-    title: "crush", color: "#b8e86b",
+    title: "crush", color: "#6b8f1e",
     knobs: [
       { id: "bits", label: "bits", min: 1, max: 8, curve: "lin", step: 1, v0: 4, fmt: fInt },
       { id: "level", label: "level", min: 0, max: 1, curve: "lin", v0: 0.8, fmt: fPct },
@@ -970,7 +970,7 @@ const TYPES = {
   },
 
   chorus: {
-    title: "chorus", color: "#6a9eff",
+    title: "chorus", color: "#1f6b8f",
     knobs: [
       { id: "rate", label: "rate", min: 0.05, max: 5, curve: "log", v0: 0.6, fmt: fHz },
       { id: "depth", label: "depth", min: 0, max: 8, curve: "lin", v0: 3, fmt: fNum },
@@ -1006,7 +1006,7 @@ const TYPES = {
   },
 
   phaser: {
-    title: "phaser", color: "#c084fc",
+    title: "phaser", color: "#8f3691",
     knobs: [
       { id: "rate", label: "rate", min: 0.05, max: 4, curve: "log", v0: 0.4, fmt: fHz },
       { id: "depth", label: "depth", min: 100, max: 2500, curve: "log", v0: 600, fmt: fHz },
@@ -1831,7 +1831,7 @@ const scopeBuf = new Uint8Array(1024);
     const ctx = m.scope.getContext("2d");
     const { width: W, height: H } = m.scope;
     ctx.clearRect(0, 0, W, H);
-    ctx.strokeStyle = "#6ee7ff";
+    ctx.strokeStyle = "#efe6d2"; // matches --well-ink in style.css
     ctx.lineWidth = 2;
     ctx.beginPath();
     m.n.an.getByteTimeDomainData(scopeBuf);

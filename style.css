@@ -1,11 +1,27 @@
+/* Design language: a warm, light hardware body (teenage engineering /
+   Nothing inspired) instead of the old dark-synth neon look -- modules
+   read like cream device chassis, with a handful of small dark "screen"
+   insets (dropdowns, step cells, readouts, jacks) standing in for an
+   actual display, same as those devices mix a light body with a dark
+   screen rather than being uniformly light or dark. --ink/--dim are for
+   text on the light surfaces (chassis); --well-ink/--well-dim are their
+   counterparts for the dark screen insets. Per-module accent colors
+   (TYPES[t].color in script.js) are kept at a medium tone deliberately,
+   so the same hex reads clearly as text on both the light chassis and
+   the dark screen insets without needing two palettes. */
 :root {
-  --bg: #0b0d14;
-  --panel: #161a26;
-  --panel-edge: #262c40;
-  --ink: #dfe6f5;
-  --dim: #7a86a8;
-  --audio: #6ee7ff;
-  --gate: #ffb066;
+  --bg: #e9e2d2;
+  --panel: #f5f0e4;
+  --panel-edge: #c9bd9c;
+  --ink: #241f17;
+  --dim: #8a7d63;
+  --well: #1b170f;
+  --well-ink: #efe6d2;
+  --well-dim: #93886e;
+  --accent: #c8481f;
+  --audio: #2f8f86;
+  --gate: #bd6a1f;
+  --shadow: 40, 32, 18;
 }
 
 * { box-sizing: border-box; }
@@ -41,7 +57,7 @@ body {
   flex-wrap: wrap;
   gap: 8px;
   padding: 8px 12px;
-  background: rgba(11, 13, 20, 0.9);
+  background: rgba(233, 226, 210, 0.92);
   backdrop-filter: blur(6px);
   border-bottom: 1px solid var(--panel-edge);
 }
@@ -72,8 +88,8 @@ body {
 #play {
   font-size: 13px;
   min-width: 44px;
-  border-color: #3a9d6e;
-  color: #7cffb2;
+  border-color: #3f8f5e;
+  color: #1f6b40;
   /* pin it to the left edge of the bar so it's still reachable after
      scrolling sideways to the presets on a narrow screen — a no-op on
      wider screens where the bar never scrolls horizontally */
@@ -81,7 +97,7 @@ body {
   left: 0;
   z-index: 2;
 }
-#play.on { background: #14301f; }
+#play.on { background: #1f6b40; color: var(--well-ink); }
 
 .chips { display: flex; align-items: center; flex-wrap: wrap; gap: 5px; }
 .chips button { padding: 3px 9px; }
@@ -126,7 +142,7 @@ body {
   top: 0;
   left: 0;
   transform-origin: 0 0;
-  background-image: radial-gradient(circle, #1d2233 1px, transparent 1.2px);
+  background-image: radial-gradient(circle, rgba(36, 31, 23, 0.16) 1px, transparent 1.2px);
   background-size: 26px 26px;
 }
 
@@ -148,7 +164,7 @@ body {
   background: var(--panel);
   border: 1px solid var(--panel-edge);
   border-radius: 10px;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 3px 14px rgba(var(--shadow), 0.18);
   user-select: none;
   -webkit-user-select: none;
 }
@@ -174,7 +190,7 @@ body {
   height: 7px;
   border-radius: 50%;
   background: var(--mc);
-  box-shadow: 0 0 7px var(--mc);
+  box-shadow: 0 0 4px var(--mc);
 }
 .mhead span { flex: 1; }
 .mx {
@@ -187,7 +203,7 @@ body {
   padding: 0 2px;
   line-height: 1;
 }
-.mx:hover { color: #ff7b7b; }
+.mx:hover { color: #b8382f; }
 
 .mhead .srcwarn {
   flex: none;
@@ -204,15 +220,15 @@ body {
   font-weight: 400;
   text-transform: none;
   letter-spacing: normal;
-  color: var(--dim);
-  background: #0e1220;
+  color: var(--well-dim);
+  background: var(--well);
   border: 1px solid var(--panel-edge);
   border-radius: 5px;
   padding: 1px 3px;
   max-width: 56px;
   cursor: pointer;
 }
-.mhead select.swap:hover { color: var(--ink); border-color: var(--dim); }
+.mhead select.swap:hover { color: var(--well-ink); border-color: var(--dim); }
 
 .mbody {
   display: flex;
@@ -231,21 +247,22 @@ body {
 select {
   font: inherit;
   font-size: 11px;
-  color: var(--ink);
-  background: #0e1220;
+  color: var(--well-ink);
+  background: var(--well);
   border: 1px solid var(--panel-edge);
   border-radius: 6px;
   padding: 2px 4px;
   max-width: 86px;
 }
 
-/* knobs */
+/* knobs -- a light cap (like a real hardware knob top) with a dark
+   indicator tick, rather than the old dark glowing dial */
 .kwrap { display: flex; flex-direction: column; align-items: center; gap: 2px; width: 36px; }
 .knob {
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, #2b3350, #131726 70%);
+  background: radial-gradient(circle at 35% 30%, #fffdf7, #ddd2b4 75%);
   border: 1px solid var(--panel-edge);
   position: relative;
   cursor: ns-resize;
@@ -264,9 +281,10 @@ select {
   background: var(--mc);
 }
 .klab {
+  font-family: ui-monospace, "SF Mono", monospace;
   font-size: 8.5px;
   color: var(--dim);
-  letter-spacing: 0.03em;
+  letter-spacing: 0.02em;
   text-align: center;
   white-space: nowrap;
 }
@@ -288,7 +306,7 @@ select {
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  background: #0a0c13;
+  background: var(--well);
   border: 3px solid var(--audio);
   cursor: crosshair;
   touch-action: none;
@@ -322,7 +340,7 @@ select {
   position: relative;
   width: 22px;
   height: 52px;
-  background: #0e1220;
+  background: var(--well);
   border: 1px solid var(--panel-edge);
   border-radius: 4px;
   overflow: hidden;
@@ -335,7 +353,7 @@ select {
   right: 0;
   bottom: 0;
   background: var(--mc);
-  opacity: 0.28;
+  opacity: 0.45;
 }
 .cell .nn {
   position: absolute;
@@ -344,11 +362,11 @@ select {
   bottom: 2px;
   text-align: center;
   font-size: 8px;
-  color: var(--ink);
+  color: var(--well-ink);
   pointer-events: none;
 }
-.cell.off .fill { opacity: 0.07; }
-.cell.off .nn { color: var(--dim); text-decoration: line-through; }
+.cell.off .fill { opacity: 0.1; }
+.cell.off .nn { color: var(--well-dim); text-decoration: line-through; }
 .cell.lit { border-color: var(--mc); box-shadow: 0 0 9px var(--mc) inset; }
 
 /* arp readout */
@@ -357,7 +375,7 @@ select {
   font-size: 12px;
   font-family: ui-monospace, monospace;
   color: var(--mc);
-  background: #0e1220;
+  background: var(--well);
   border: 1px solid var(--panel-edge);
   border-radius: 5px;
   padding: 2px 0;
@@ -369,7 +387,7 @@ select {
   display: block;
   width: 128px;
   height: 46px;
-  background: #0e1220;
+  background: var(--well);
   border: 1px solid var(--panel-edge);
   border-radius: 5px;
 }
@@ -387,7 +405,7 @@ select {
   border: 1px solid var(--panel-edge);
   border-radius: 999px;
   padding: 3px;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 3px 14px rgba(var(--shadow), 0.2);
 }
 #zoomCtl button {
   font: inherit;
@@ -429,11 +447,11 @@ select {
   z-index: 50;
   max-width: min(440px, 90vw);
   background: var(--panel);
-  border: 1px solid var(--dim);
+  border: 1px solid var(--panel-edge);
   border-radius: 10px;
   padding: 10px 16px;
   font-size: 13px;
-  box-shadow: 0 8px 26px rgba(0, 0, 0, 0.55);
+  box-shadow: 0 6px 22px rgba(var(--shadow), 0.24);
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.25s, transform 0.25s;
@@ -446,7 +464,7 @@ select {
   position: fixed;
   inset: 0;
   z-index: 60;
-  background: rgba(5, 6, 10, 0.72);
+  background: rgba(20, 16, 9, 0.55);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -460,7 +478,7 @@ select {
   border: 1px solid var(--panel-edge);
   border-radius: 12px;
   padding: 18px 22px;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 12px 36px rgba(var(--shadow), 0.3);
 }
 #help h2 { margin: 0 0 10px; font-size: 16px; }
 #help ul { margin: 0 0 10px; padding-left: 18px; }
@@ -484,8 +502,8 @@ select {
   font: inherit;
   font-size: 12px;
   font-weight: 700;
-  color: var(--bg);
-  background: var(--audio);
+  color: var(--well-ink);
+  background: var(--accent);
   border: 0;
   border-radius: 999px;
   padding: 5px 12px;
@@ -498,7 +516,7 @@ select {
   position: fixed;
   inset: 0;
   z-index: 60;
-  background: rgba(5, 6, 10, 0.6);
+  background: rgba(20, 16, 9, 0.5);
   display: flex;
   align-items: flex-end;
   justify-content: center;
@@ -513,7 +531,7 @@ select {
   border: 1px solid var(--panel-edge);
   border-bottom: 0;
   border-radius: 14px 14px 0 0;
-  box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.55);
+  box-shadow: 0 -6px 26px rgba(var(--shadow), 0.26);
 }
 .sheetHead {
   flex: 0 0 auto;
@@ -549,12 +567,13 @@ select {
 .addGrid button {
   font: inherit;
   font-size: 13px;
+  font-weight: 600;
   color: var(--mc, var(--ink));
-  background: #0e1220;
+  background: var(--bg);
   border: 1px solid var(--panel-edge);
   border-radius: 8px;
   padding: 12px 8px;
   cursor: pointer;
   text-align: center;
 }
-.addGrid button:hover { border-color: var(--mc, var(--dim)); background: #131728; }
+.addGrid button:hover { border-color: var(--mc, var(--dim)); background: var(--panel-edge); }

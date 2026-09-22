@@ -7,6 +7,21 @@ dependencies, three files.
 
 ## How it works
 
+- **Design language**: a light, warm hardware look (teenage engineering /
+  Nothing-inspired) rather than a dark neon synth-app skin. Module bodies,
+  the header, and overlays are a cream "chassis" (`--panel`/`--bg` in
+  `style.css`); a handful of functional elements that act like an actual
+  display — dropdowns, sequencer step cells, the arp readout, the
+  oscilloscope, jacks — stay dark (`--well`/`--well-ink`), the same way
+  those devices mix a light body with a dark screen rather than being
+  uniformly one or the other. Per-module accent colors (`TYPES[t].color`)
+  are deliberately medium-toned so the same hex reads clearly as text on
+  both the light chassis and the dark screen insets, instead of needing a
+  separate palette for each. One warm accent (`--accent`) marks the single
+  primary action (the **+ module** button), the rest of the UI stays
+  restrained. Modules are added through a category → module sheet
+  (`#addPanel`, opened by `addBtn`/`openAddPanel()` in `script.js`) instead
+  of one long row of ~23 buttons.
 - **Modules** (`TYPES` in `script.js`) each own a few AudioNodes and
   declare their knobs, selects, and ports. Twenty-three of them: oscillator,
   lfo, envelope, amp, filter, a master clock, step sequencer, arpeggiator,
@@ -17,11 +32,11 @@ dependencies, three files.
   pedals alongside delay/dist/reverb — fuzz, crush (a native WaveShaper
   bit-crusher, no ScriptProcessor/Worklet needed), chorus, and phaser —
   joining them into one seven-way swappable pedalboard.
-- **Cables** come in two kinds. Cyan jacks carry audio/CV as real
-  AudioNode → AudioNode/AudioParam connections; orange jacks carry
+- **Cables** come in two kinds. Teal jacks carry audio/CV as real
+  AudioNode → AudioNode/AudioParam connections; rust-orange jacks carry
   gate/trigger events as JS callbacks with pre-scheduled audio-clock
   timestamps, so envelopes and chained clocks stay sample-accurate. Not
-  every cyan-to-cyan pairing is worth making, though: a "cv" output (a
+  every teal-to-teal pairing is worth making, though: a "cv" output (a
   sequencer/arpeggiator's `pitch`, a plain Hz value with no waveform in
   it) plugged straight into a "strict" input (the plain audio-in jack of
   amp/filter/delay/dist/verb/the speaker — anything that just passes a
