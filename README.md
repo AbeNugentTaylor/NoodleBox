@@ -29,13 +29,18 @@ dependencies, three files.
   for the one parameter you reach for first, `size: "sm"` with
   `cap: "dark"` for secondary trim, and `cap: "accent"` for the control
   that defines the module (a filter's cutoff, a distortion's drive).
-  `shape:` then varies the silhouette rather than just the size — a
-  knurled collar (`fluted`) on the hero control, a chicken-head pointer
-  that reaches past the rim (`pointer`) on the signature one, a flat
-  screwdriver trim pot (`slot`) for calibration, a value ring drawn
-  straight from the parameter's own 0-1 value (`arc`) where the amount is
-  worth reading at a glance, and a squircle (`square`) on the controls
-  that pick a note. Counts rather than sweeps (a sequencer's step count,
+  `shape:` then varies the silhouette rather than just the size. A border
+  can only ever draw a circle or a rounded box, so the shapes that aren't
+  either — a rounded-back teardrop (`teardrop`) on the signature control,
+  a three-lobed clover (`trilobe`) and an eight-lobe collet (`scalloped`)
+  on the hero ones — mask the *rotating* cap with an inline SVG outline,
+  so the whole cap is the shape and it turns with the value. (Their
+  drop-shadow has to sit on the parent: a filter on the masked element is
+  computed before the mask clips it, and would be thrown away.) The rest
+  stay border-drawn: a knurled collar (`fluted`), a flat screwdriver trim
+  pot (`slot`) for calibration, a value ring drawn straight from the
+  parameter's own 0-1 value (`arc`) where the amount is worth reading at
+  a glance, and a squircle (`square`) on the controls that pick a note. Counts rather than sweeps (a sequencer's step count,
   the arp's octaves, crush's bit depth) use `ctrl: "stepper"`, a −/+ pair
   either side of a small readout. Short
   option lists (`seg: true` on a select, with optional `short` labels)

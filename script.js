@@ -251,7 +251,7 @@ const TYPES = {
     title: "oscillator", color: "#2f6ea3",
     selects: [{ id: "wave", opts: ["sine", "triangle", "sawtooth", "square"], v0: "sawtooth", seg: true, short: ["sin", "tri", "saw", "sqr"] }],
     knobs: [
-      { id: "freq", label: "freq", min: 0, max: 2000, curve: "sq", v0: 110, fmt: fHz, size: "lg", shape: "fluted" },
+      { id: "freq", label: "freq", min: 0, max: 2000, curve: "sq", v0: 110, fmt: fHz, size: "lg", shape: "trilobe" },
       { id: "fm", label: "fm amt", min: 0, max: 2000, curve: "cu", v0: 0, fmt: fHz, size: "sm", shape: "slot" },
     ],
     ins: [
@@ -346,7 +346,7 @@ const TYPES = {
     title: "filter", color: "#b5611f",
     selects: [{ id: "type", opts: ["lowpass", "highpass", "bandpass"], v0: "lowpass", seg: true, short: ["lp", "hp", "bp"] }],
     knobs: [
-      { id: "cut", label: "cutoff", min: 40, max: 12000, curve: "log", v0: 1200, fmt: fHz, size: "lg", cap: "accent", shape: "pointer" },
+      { id: "cut", label: "cutoff", min: 40, max: 12000, curve: "log", v0: 1200, fmt: fHz, size: "lg", cap: "accent", shape: "teardrop" },
       { id: "res", label: "res", min: 0, max: 20, curve: "sq", v0: 2, fmt: fNum, size: "sm", shape: "slot" },
       { id: "mod", label: "mod amt", min: 0, max: 8000, curve: "cu", v0: 0, fmt: fHz, size: "sm", shape: "slot" },
     ],
@@ -374,7 +374,7 @@ const TYPES = {
 
   clock: {
     title: "clock", color: "#1f7a5e",
-    knobs: [{ id: "tempo", label: "tempo", min: 40, max: 240, curve: "lin", v0: 120, fmt: fBpm, size: "lg", shape: "fluted" }],
+    knobs: [{ id: "tempo", label: "tempo", min: 40, max: 240, curve: "lin", v0: 120, fmt: fBpm, size: "lg", shape: "scalloped" }],
     ins: [],
     outs: [{ id: "gate", kind: "gate", help: "a steady pulse at the “tempo” knob — feed it into sequencers' or arpeggios' “clock” input to sync them to one shared master beat, then set each one's own “rate” to multiply or divide against it." }],
     create(m) {
@@ -412,7 +412,7 @@ const TYPES = {
     ],
     knobs: [
       { id: "steps", label: "steps", min: 1, max: 32, curve: "lin", step: 1, v0: 8, fmt: fInt, ctrl: "stepper" },
-      { id: "tempo", label: "tempo", min: 40, max: 240, curve: "lin", v0: 120, fmt: fBpm, size: "lg", shape: "fluted" },
+      { id: "tempo", label: "tempo", min: 40, max: 240, curve: "lin", v0: 120, fmt: fBpm, size: "lg", shape: "scalloped" },
       { id: "gate", label: "gate len", min: 0.05, max: 0.95, curve: "lin", v0: 0.6, fmt: fPct, size: "sm", cap: "dark" },
       { id: "glide", label: "glide", min: 0, max: 0.4, curve: "cu", v0: 0, fmt: fS, size: "sm", shape: "slot" },
     ],
@@ -559,7 +559,7 @@ const TYPES = {
   dist: {
     title: "distort", color: "#a4263a",
     knobs: [
-      { id: "drive", label: "drive", min: 1, max: 60, curve: "log", v0: 8, fmt: fNum, size: "lg", cap: "accent", shape: "pointer" },
+      { id: "drive", label: "drive", min: 1, max: 60, curve: "log", v0: 8, fmt: fNum, size: "lg", cap: "accent", shape: "teardrop" },
       { id: "level", label: "level", min: 0, max: 1, curve: "lin", v0: 0.6, fmt: fPct, ctrl: "fader" },
     ],
     ins: [{ id: "in", kind: "audio", strict: true, help: "the signal to distort." }],
@@ -659,7 +659,7 @@ const TYPES = {
   kick: {
     title: "kick", color: "#8f3a2a",
     knobs: [
-      { id: "tune", label: "tune", min: 30, max: 120, curve: "lin", v0: 55, fmt: fHz, size: "lg", shape: "fluted" },
+      { id: "tune", label: "tune", min: 30, max: 120, curve: "lin", v0: 55, fmt: fHz, size: "lg", shape: "trilobe" },
       { id: "punch", label: "punch", min: 0, max: 1, curve: "lin", v0: 0.6, fmt: fPct, size: "sm", shape: "slot" },
       { id: "decay", label: "decay", min: 0.05, max: 1.2, curve: "log", v0: 0.35, fmt: fS, size: "sm", cap: "dark" },
     ],
@@ -922,7 +922,7 @@ const TYPES = {
   fuzz: {
     title: "fuzz", color: "#a3244f",
     knobs: [
-      { id: "drive", label: "drive", min: 2, max: 100, curve: "log", v0: 25, fmt: fNum, size: "lg", cap: "accent", shape: "pointer" },
+      { id: "drive", label: "drive", min: 2, max: 100, curve: "log", v0: 25, fmt: fNum, size: "lg", cap: "accent", shape: "teardrop" },
       { id: "bias", label: "bias", min: -0.5, max: 0.5, curve: "lin", v0: 0.15, fmt: fNum, size: "sm", shape: "slot" },
       { id: "level", label: "level", min: 0, max: 1, curve: "lin", v0: 0.5, fmt: fPct, ctrl: "fader" },
     ],

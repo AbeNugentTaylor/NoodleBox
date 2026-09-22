@@ -337,20 +337,63 @@ select {
   mask: radial-gradient(circle, transparent 52%, #000 54%);
 }
 
-/* pointer: a chicken-head wedge reaching just past the rim */
-.kwrap.shape-pointer .kdot::after {
-  top: -4px;
-  width: 0;
-  height: 0;
-  margin-left: -4.5px;
-  border-radius: 0;
+/* Shaped caps. A border can only ever draw a circle or a rounded box, so
+   these mask the rotating cap (.kdot) with an inline SVG outline instead:
+   the whole cap is the shape and it turns with the value, which is what
+   makes a lobed or pointed knob readable at a glance. The drop-shadow
+   sits on the parent, since a filter on the masked element itself would
+   be computed before the mask clipped it and get thrown away. */
+.kwrap.shape-teardrop .knob,
+.kwrap.shape-trilobe .knob,
+.kwrap.shape-scalloped .knob {
   background: none;
-  border-left: 4.5px solid transparent;
-  border-right: 4.5px solid transparent;
-  border-bottom: 11px solid var(--mc);
+  border: 0;
+  filter: drop-shadow(0 1px 1.5px rgba(40, 32, 18, 0.42));
 }
-.kwrap.shape-pointer.cap-accent .kdot::after { border-bottom-color: #2b1206; }
-.kwrap.shape-pointer.cap-dark .kdot::after { border-bottom-color: var(--well-ink); }
+.kwrap.shape-teardrop .kdot,
+.kwrap.shape-trilobe .kdot,
+.kwrap.shape-scalloped .kdot {
+  background: radial-gradient(circle at 36% 28%, #fffdf7 0%, #eae1c8 55%, #c3b48f 100%);
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+}
+.kwrap.shape-teardrop.cap-accent .kdot,
+.kwrap.shape-trilobe.cap-accent .kdot,
+.kwrap.shape-scalloped.cap-accent .kdot {
+  background: radial-gradient(circle at 36% 28%, #f0824f 0%, #d24b1d 55%, #9c3510 100%);
+}
+.kwrap.shape-teardrop.cap-dark .kdot,
+.kwrap.shape-trilobe.cap-dark .kdot,
+.kwrap.shape-scalloped.cap-dark .kdot {
+  background: radial-gradient(circle at 36% 28%, #5a5343 0%, #2a2419 60%, #14100a 100%);
+}
+
+/* teardrop: a triangle with a rounded back -- the point is the indicator,
+   so it needs no separate tick */
+.kwrap.shape-teardrop .kdot {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M50 4 C61 22 86 34 86 58 A36 36 0 1 1 14 58 C14 34 39 22 50 4 Z' fill='%23fff'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M50 4 C61 22 86 34 86 58 A36 36 0 1 1 14 58 C14 34 39 22 50 4 Z' fill='%23fff'/%3E%3C/svg%3E");
+}
+.kwrap.shape-teardrop .kdot::after { display: none; }
+
+/* trilobe: a three-lobed clover cap */
+.kwrap.shape-trilobe .kdot {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cg fill='%23fff'%3E%3Ccircle cx='50' cy='26' r='25'/%3E%3Ccircle cx='28' cy='64' r='25'/%3E%3Ccircle cx='72' cy='64' r='25'/%3E%3Ccircle cx='50' cy='52' r='28'/%3E%3C/g%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cg fill='%23fff'%3E%3Ccircle cx='50' cy='26' r='25'/%3E%3Ccircle cx='28' cy='64' r='25'/%3E%3Ccircle cx='72' cy='64' r='25'/%3E%3Ccircle cx='50' cy='52' r='28'/%3E%3C/g%3E%3C/svg%3E");
+}
+
+/* scalloped: a six-lobe collet knob */
+.kwrap.shape-scalloped .kdot {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cg fill='%23fff'%3E%3Ccircle cx='50' cy='20' r='13'/%3E%3Ccircle cx='71' cy='29' r='13'/%3E%3Ccircle cx='80' cy='50' r='13'/%3E%3Ccircle cx='71' cy='71' r='13'/%3E%3Ccircle cx='50' cy='80' r='13'/%3E%3Ccircle cx='29' cy='71' r='13'/%3E%3Ccircle cx='20' cy='50' r='13'/%3E%3Ccircle cx='29' cy='29' r='13'/%3E%3Ccircle cx='50' cy='50' r='34'/%3E%3C/g%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cg fill='%23fff'%3E%3Ccircle cx='50' cy='20' r='13'/%3E%3Ccircle cx='71' cy='29' r='13'/%3E%3Ccircle cx='80' cy='50' r='13'/%3E%3Ccircle cx='71' cy='71' r='13'/%3E%3Ccircle cx='50' cy='80' r='13'/%3E%3Ccircle cx='29' cy='71' r='13'/%3E%3Ccircle cx='20' cy='50' r='13'/%3E%3Ccircle cx='29' cy='29' r='13'/%3E%3Ccircle cx='50' cy='50' r='34'/%3E%3C/g%3E%3C/svg%3E");
+}
+/* the lobes repeat every 120°/60°, so these still need a tick to read */
+.kwrap.shape-trilobe .kdot::after,
+.kwrap.shape-scalloped .kdot::after { background: #46402f; }
+.kwrap.shape-trilobe.cap-dark .kdot::after,
+.kwrap.shape-scalloped.cap-dark .kdot::after { background: var(--well-ink); }
 
 /* slot: a flat metal trim pot you'd set once with a screwdriver */
 .kwrap.shape-slot .knob {
