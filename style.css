@@ -22,6 +22,24 @@
   --audio: #2f8f86;
   --gate: #bd6a1f;
   --shadow: 40, 32, 18;
+  /* Cap surfaces. Each is three stacked layers -- a specular highlight
+     where the light catches the dome, a rim that falls away from it, and
+     the body colour underneath -- so a knob reads as a moulded object
+     rather than a flat disc. Shared by the border-drawn caps and the
+     SVG-masked ones, which can't use box-shadow for relief because the
+     mask would clip it to the silhouette. */
+  --cap-spec: radial-gradient(ellipse 55% 42% at 33% 22%, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0) 65%);
+  --cap-rim: radial-gradient(circle at 50% 50%, rgba(74, 60, 30, 0) 52%, rgba(74, 60, 30, 0.32) 100%);
+  --cap-body: radial-gradient(circle at 36% 30%, #fffdf7 0%, #efe7d2 48%, #cfc2a0 100%);
+  --cap-spec-dark: radial-gradient(ellipse 55% 42% at 33% 22%, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0) 62%);
+  --cap-rim-dark: radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0) 48%, rgba(0, 0, 0, 0.5) 100%);
+  --cap-body-dark: radial-gradient(circle at 36% 30%, #5d5445 0%, #322b20 55%, #14100a 100%);
+  --cap-spec-accent: radial-gradient(ellipse 55% 42% at 33% 22%, rgba(255, 255, 255, 0.62), rgba(255, 255, 255, 0) 62%);
+  --cap-rim-accent: radial-gradient(circle at 50% 50%, rgba(60, 16, 0, 0) 48%, rgba(60, 16, 0, 0.45) 100%);
+  --cap-body-accent: radial-gradient(circle at 36% 30%, #f28c58 0%, #d6521f 52%, #93310d 100%);
+  /* relief for the border-drawn caps: lit top lip, shaded underside, cast shadow */
+  --cap-relief: inset 0 1px 0.5px rgba(255, 255, 255, 0.8), inset 0 -1.5px 1.5px rgba(74, 60, 30, 0.3), 0 1px 1.5px rgba(40, 32, 18, 0.34);
+  --cap-relief-dark: inset 0 1px 0.5px rgba(255, 255, 255, 0.26), inset 0 -1.5px 1.5px rgba(0, 0, 0, 0.55), 0 1px 1.5px rgba(40, 32, 18, 0.4);
 }
 
 * { box-sizing: border-box; }
@@ -279,8 +297,9 @@ select {
   width: 26px;
   height: 26px;
   border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, #fffdf7, #ddd2b4 75%);
+  background: var(--cap-spec), var(--cap-rim), var(--cap-body);
   border: 1px solid var(--panel-edge);
+  box-shadow: var(--cap-relief);
   position: relative;
   cursor: ns-resize;
   touch-action: none;
@@ -291,12 +310,14 @@ select {
 /* cap colours -- cream by default, a black cap for secondary trim, and
    the one warm accent for the parameter that defines the module */
 .kwrap.cap-dark .knob {
-  background: radial-gradient(circle at 35% 30%, #4b453a, #17130d 75%);
-  border-color: #2b251b;
+  background: var(--cap-spec-dark), var(--cap-rim-dark), var(--cap-body-dark);
+  border-color: #221d15;
+  box-shadow: var(--cap-relief-dark);
 }
 .kwrap.cap-accent .knob {
-  background: radial-gradient(circle at 35% 30%, #e8703c, #b63c13 78%);
-  border-color: #8e2f0e;
+  background: var(--cap-spec-accent), var(--cap-rim-accent), var(--cap-body-accent);
+  border-color: #7e2a0b;
+  box-shadow: var(--cap-relief-dark);
 }
 
 .kdot { position: absolute; inset: 0; transform: rotate(var(--rot, 0deg)); }
@@ -350,24 +371,24 @@ select {
 .kwrap.shaped .knob {
   background: none;
   border: 0;
-  filter: drop-shadow(0 1px 1.5px rgba(40, 32, 18, 0.42));
+  filter: drop-shadow(0 1px 1px rgba(40, 32, 18, 0.45)) drop-shadow(0 2px 3px rgba(40, 32, 18, 0.22));
 }
 .kwrap.shaped .kdot {
-  background: radial-gradient(circle at 36% 28%, #fffdf7 0%, #eae1c8 55%, #c3b48f 100%);
+  background: var(--cap-spec), var(--cap-rim), var(--cap-body);
   -webkit-mask-repeat: no-repeat;
   mask-repeat: no-repeat;
   -webkit-mask-size: 100% 100%;
   mask-size: 100% 100%;
 }
 .kwrap.shaped.cap-accent .kdot {
-  background: radial-gradient(circle at 36% 28%, #f0824f 0%, #d24b1d 55%, #9c3510 100%);
+  background: var(--cap-spec-accent), var(--cap-rim-accent), var(--cap-body-accent);
 }
 .kwrap.shaped.cap-dark .kdot {
-  background: radial-gradient(circle at 36% 28%, #5a5343 0%, #2a2419 60%, #14100a 100%);
+  background: var(--cap-spec-dark), var(--cap-rim-dark), var(--cap-body-dark);
 }
 /* the lobes repeat, so these still need a tick to resolve the rotation */
-.kwrap.shaped .kdot::after { background: #46402f; }
-.kwrap.shaped.cap-dark .kdot::after { background: var(--well-ink); }
+.kwrap.shaped .kdot::after { background: #46402f; box-shadow: 0.5px 0.5px 0 rgba(255, 255, 255, 0.55); }
+.kwrap.shaped.cap-dark .kdot::after { background: var(--well-ink); box-shadow: 0 0.5px 0 rgba(0, 0, 0, 0.5); }
 
 /* teardrop: a triangle with a rounded back -- the point is the indicator,
    so it needs no separate tick */
@@ -389,29 +410,16 @@ select {
   mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath fill='%23fff' d='M42 10A13 13 0 0 1 58 10Q56.88 33.39 72.63 16.06A13 13 0 0 1 83.94 27.37Q66.61 43.12 90 42A13 13 0 0 1 90 58Q66.61 56.88 83.94 72.63A13 13 0 0 1 72.63 83.94Q56.88 66.61 58 90A13 13 0 0 1 42 90Q43.12 66.61 27.37 83.94A13 13 0 0 1 16.06 72.63Q33.39 56.88 10 58A13 13 0 0 1 10 42Q33.39 43.12 16.06 27.37A13 13 0 0 1 27.37 16.06Q43.12 33.39 42 10Z'/%3E%3C/svg%3E");
 }
 
-/* star: five sharp points with concave flanks */
-.kwrap.shape-star .kdot {
-  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath fill='%23fff' d='M50 3Q59.39 37.07 94.7 35.48Q65.19 54.94 77.63 88.02Q50 65.98 22.37 88.02Q34.81 54.94 5.3 35.48Q40.61 37.07 50 3Z'/%3E%3C/svg%3E");
-  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath fill='%23fff' d='M50 3Q59.39 37.07 94.7 35.48Q65.19 54.94 77.63 88.02Q50 65.98 22.37 88.02Q34.81 54.94 5.3 35.48Q40.61 37.07 50 3Z'/%3E%3C/svg%3E");
-}
 
-/* pinwheel: four swept blades -- the tip chord is tilted off perpendicular
-   and the valleys pushed round, which is what reads as sweep */
-.kwrap.shape-pinwheel .kdot {
-  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath fill='%23fff' d='M41.34 1A16 16 0 0 1 58.66 11Q62.77 59.51 99 41.34A16 16 0 0 1 89 58.66Q40.49 62.77 58.66 99A16 16 0 0 1 41.34 89Q37.23 40.49 1 58.66A16 16 0 0 1 11 41.34Q59.51 37.23 41.34 1Z'/%3E%3C/svg%3E");
-  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath fill='%23fff' d='M41.34 1A16 16 0 0 1 58.66 11Q62.77 59.51 99 41.34A16 16 0 0 1 89 58.66Q40.49 62.77 58.66 99A16 16 0 0 1 41.34 89Q37.23 40.49 1 58.66A16 16 0 0 1 11 41.34Q59.51 37.23 41.34 1Z'/%3E%3C/svg%3E");
-}
-
-/* notched: a disc with round finger-bites taken out of the rim */
-.kwrap.shape-notched .kdot {
-  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath fill='%23fff' d='M97.49 43A48 48 0 0 1 67.68 94.62A18 18 0 0 0 32.32 94.62A48 48 0 0 1 2.51 43A18 18 0 0 0 20.19 12.38A48 48 0 0 1 79.81 12.38A18 18 0 0 0 97.49 43Z'/%3E%3C/svg%3E");
-  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath fill='%23fff' d='M97.49 43A48 48 0 0 1 67.68 94.62A18 18 0 0 0 32.32 94.62A48 48 0 0 1 2.51 43A18 18 0 0 0 20.19 12.38A48 48 0 0 1 79.81 12.38A18 18 0 0 0 97.49 43Z'/%3E%3C/svg%3E");
-}
 
 /* slot: a flat metal trim pot you'd set once with a screwdriver */
 .kwrap.shape-slot .knob {
-  background: radial-gradient(circle at 50% 35%, #7b7364, #3b362c 80%);
-  border-color: #2a251d;
+  background:
+    radial-gradient(ellipse 60% 40% at 32% 24%, rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0) 60%),
+    radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0) 45%, rgba(0, 0, 0, 0.5) 100%),
+    linear-gradient(145deg, #8d8473 0%, #5e5749 46%, #38332a 100%);
+  border-color: #241f18;
+  box-shadow: inset 0 1px 0.5px rgba(255, 255, 255, 0.34), 0 1px 1.5px rgba(40, 32, 18, 0.38);
 }
 .kwrap.shape-slot .kdot::after {
   top: 50%;
@@ -422,7 +430,8 @@ select {
   margin-top: -1px;
   margin-left: 0;
   border-radius: 1px;
-  background: #17130d;
+  background: #14110b;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.3);
 }
 
 /* arc: the value drawn as a ring around a small cap */
@@ -438,8 +447,9 @@ select {
   position: absolute;
   inset: 5px;
   border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, #fffdf7, #ddd2b4 75%);
+  background: var(--cap-spec), var(--cap-rim), var(--cap-body);
   border: 1px solid var(--panel-edge);
+  box-shadow: var(--cap-relief);
 }
 .kwrap.shape-arc.sm .knob::before { inset: 3px; }
 .kwrap.shape-arc .kdot::after { top: 7px; height: 5px; }
@@ -484,9 +494,10 @@ select {
   position: relative;
   width: 9px;
   height: 46px;
-  background: var(--well);
+  background: linear-gradient(90deg, #14110b, #2a2318 45%, #14110b);
   border: 1px solid var(--panel-edge);
   border-radius: 4px;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.75), inset 0 -1px 0 rgba(255, 255, 255, 0.07);
   cursor: ns-resize;
   touch-action: none;
 }
@@ -498,10 +509,10 @@ select {
   width: 18px;
   height: 11px;
   bottom: calc(var(--pos, 0) * (100% - 11px));
-  background: linear-gradient(#fffdf7, #d9cdad);
+  background: linear-gradient(#fffdf7 0%, #f3edda 42%, #d8cba8 58%, #bfae86 100%);
   border: 1px solid var(--panel-edge);
   border-radius: 3px;
-  box-shadow: 0 1px 2px rgba(var(--shadow), 0.35);
+  box-shadow: 0 1px 2px rgba(var(--shadow), 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.9), inset 0 -1px 0 rgba(90, 74, 40, 0.3);
 }
 .fthumb::after {
   content: "";

@@ -34,17 +34,24 @@ dependencies, three files.
   neither mask the *rotating* cap with an inline SVG outline, which is
   what lets the whole cap be the shape and turn with the value. Those are
   a rounded-back teardrop (`teardrop`) on the signature control, three
-  flared arms with deep concave scoops (`trilobe`), an eight-flute collet
-  (`scalloped`), a five-point star with concave flanks (`star`), four
-  swept blades (`pinwheel`), and a disc with round finger-bites out of
-  the rim (`notched`). All but the teardrop come from a single
+  flared arms with deep concave scoops (`trilobe`), and an eight-flute
+  collet (`scalloped`). All but the teardrop come from a single
   construction in `tools/knobshapes.py` — arm tips at some radius joined
   by valleys diving back toward the centre, each valley a quadratic whose
   control point is solved so the curve passes exactly through the
   valley's low point — so lobe count, scoop depth and blade sweep are
-  just numbers to that generator rather than hand-tuned path data. (Their
-  drop-shadow has to sit on the parent: a filter on the masked element is
-  computed before the mask clips it, and would be thrown away.) The rest
+  just numbers to that generator rather than hand-tuned path data. It can
+  make plenty of other silhouettes (five-point stars, swept-blade
+  pinwheels, bitten discs); those were tried and cut, because an abstract
+  graphic outline stops reading as a physical object, which is the
+  opposite of the point. Every cap, masked or border-drawn, is lit by the
+  same `--cap-*` surface tokens — a specular highlight, a rim falling
+  away from it, the body colour under both — which is what makes them
+  look moulded rather than filled. (The masked ones take their relief
+  purely from those gradients, and their drop-shadow has to sit on the
+  parent: a box-shadow would be clipped to the silhouette, and a filter
+  on the masked element is computed before the mask and thrown away.)
+  The rest
   stay border-drawn: a knurled collar (`fluted`), a flat screwdriver trim
   pot (`slot`) for calibration, a value ring drawn straight from the
   parameter's own 0-1 value (`arc`) where the amount is worth reading at

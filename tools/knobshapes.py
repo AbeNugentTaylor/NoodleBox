@@ -58,16 +58,13 @@ def notched(n, R, rb, start=0.0):
     return "".join(segs) + "Z"
 
 SHAPES = {
-  # hand-drawn, not from the generator
-  "teardrop":  "M50 4C61 22 86 34 86 58A36 36 0 1 1 14 58C14 34 39 22 50 4Z",
-  # existing, kept for the preview
+  # Only the caps that actually ship. lobed() will happily make five-point
+  # stars, swept-blade pinwheels and the like -- they were tried and cut,
+  # because an abstract graphic silhouette stops reading as a physical
+  # object, which is the opposite of what these are for.
+  "teardrop":  "M50 4C61 22 86 34 86 58A36 36 0 1 1 14 58C14 34 39 22 50 4Z",  # hand-drawn
   "trilobe":   lobed(3, 46, 15, 20, rTip=34),
-  # reworked: six domed lobes with deep valleys carved between them
   "scalloped": lobed(8, 40, 8, 29, rTip=13),
-  # new
-  "star":      lobed(5, 47, 0, 27),
-  "pinwheel":  lobed(4, 44, 10, 22, rTip=16, skew=26, tilt=30),
-  "notched":   notched(3, 48, 18, start=60),
 }
 
 for k, v in SHAPES.items():
