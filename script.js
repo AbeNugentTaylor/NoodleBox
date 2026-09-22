@@ -98,15 +98,43 @@ const work = document.getElementById("work");
 const svg = document.getElementById("cables");
 const CABLE_COLOR = { audio: "#6ee7ff", gate: "#ffb066" };
 
-/* board zoom: #field keeps its native 1750x1050 coordinate space (module
-   x/y, port and cable math all live there) and is just visually scaled;
+/* board zoom + sizing: #field is a native-space coordinate system (module
+   x/y, port and cable math all live there) that's just visually scaled;
    #fieldSizer's own box is resized to match so #work's scroll range lines
    up with what's actually on screen. Everything that reads real pointer
    coordinates against #field has to divide by `zoom` to land back in that
    native space — see portCenter, moveWire, bindModuleDrag, and the palette
-   "+module" placement below. */
-const ZOOM_MIN = 0.35, ZOOM_MAX = 1.25;
+   "+module" placement below.
+   Unlike a fixed-size board, #field's own native width/height (fieldW/
+   fieldH) aren't constants: fitFieldToModules() keeps them hugging
+   whatever the current patch actually needs (with a comfortable floor for
+   an empty/small board), so the canvas grows as a patch spreads out
+   instead of clipping it, and a low ZOOM_MIN plus the "fit" button make it
+   possible to zoom back out far enough to see all of it at once. */
+const ZOOM_MIN = 0.12, ZOOM_MAX = 1.25;
+const MIN_FIELD_W = 1400, MIN_FIELD_H = 900, FIELD_PAD = 220;
 let zoom = clamp(window.innerWidth / 900, ZOOM_MIN, 1);
+let fieldW = MIN_FIELD_W, fieldH = MIN_FIELD_H;
+function applyFieldSize() {
+  field.style.width = fieldW + "px";
+  field.style.height = fieldH + "px";
+  fieldSizer.style.width = fieldW * zoom + "px";
+  fieldSizer.style.height = fieldH * zoom + "px";
+}
+/* recomputes the board's native size from where modules actually are right
+   now (not a high-water mark, so the board shrinks back down too once a
+   far-flung module is removed or dragged back in) */
+function fitFieldToModules() {
+  let w = MIN_FIELD_W, h = MIN_FIELD_H;
+  for (const m of modules) {
+    w = Math.max(w, m.x + (m.el ? m.el.offsetWidth : 170) + FIELD_PAD);
+    h = Math.max(h, m.y + (m.el ? m.el.offsetHeight : 140) + FIELD_PAD);
+  }
+  if (w === fieldW && h === fieldH) return;
+  fieldW = w;
+  fieldH = h;
+  applyFieldSize();
+}
 function setZoom(z, anchorClientX, anchorClientY) {
   const wr = work.getBoundingClientRect();
   const ax = anchorClientX != null ? anchorClientX - wr.left : wr.width / 2;
@@ -117,8 +145,7 @@ function setZoom(z, anchorClientX, anchorClientY) {
   const localY = (work.scrollTop + ay) / zoom;
   zoom = clamp(z, ZOOM_MIN, ZOOM_MAX);
   field.style.transform = `scale(${zoom})`;
-  fieldSizer.style.width = 1750 * zoom + "px";
-  fieldSizer.style.height = 1050 * zoom + "px";
+  applyFieldSize();
   work.scrollLeft = localX * zoom - ax;
   work.scrollTop = localY * zoom - ay;
   zoomReset.textContent = Math.round(zoom * 100) + "%";
@@ -596,8 +623,8 @@ const TYPES = {
     custom(m, body) {
       const c = document.createElement("canvas");
       c.className = "scope";
-      c.width = 300;
-      c.height = 108;
+      c.width = 256; // 2x the .scope CSS size, for a crisp line at any pixel ratio
+      c.height = 92;
       m.scope = c;
       body.appendChild(c);
     },
@@ -1111,6 +1138,7 @@ function resizeSteps(m, n) {
     m.stepsData.length = n;
   }
   buildStepCells(m);
+  fitFieldToModules(); // more/fewer step rows can change the module's height
   saveSoon();
 }
 function bindCell(m, c, i) {
@@ -1263,6 +1291,7 @@ function addModule(type, x, y) {
   field.appendChild(el);
   modules.push(m);
   if (m.warnEl) updateSourceWarnings();
+  fitFieldToModules();
   return m;
 }
 
@@ -1275,6 +1304,7 @@ function removeModule(m) {
   }
   m.el.remove();
   modules.splice(modules.indexOf(m), 1);
+  fitFieldToModules();
   saveSoon();
 }
 
@@ -1318,14 +1348,17 @@ function bindModuleDrag(m, el, head) {
   head.addEventListener("pointermove", (e) => {
     if (!held) return;
     // pointer deltas are real screen pixels; #field's own x/y units aren't,
-    // so scale the delta back down to field-space before moving the module
-    m.x = clamp(mx0 + (e.clientX - x0) / zoom, 0, field.clientWidth - 60);
-    m.y = clamp(my0 + (e.clientY - y0) / zoom, 0, field.clientHeight - 40);
+    // so scale the delta back down to field-space before moving the module.
+    // The upper bound is just a sanity rail, not the board edge -- the
+    // board itself grows to follow the module (fitFieldToModules below).
+    m.x = clamp(mx0 + (e.clientX - x0) / zoom, 0, 20000);
+    m.y = clamp(my0 + (e.clientY - y0) / zoom, 0, 20000);
     el.style.left = m.x + "px";
     el.style.top = m.y + "px";
     redrawConnsOf(m);
+    fitFieldToModules();
   });
-  const done = () => { if (held) { held = false; el.classList.remove("dragging"); saveSoon(); } };
+  const done = () => { if (held) { held = false; el.classList.remove("dragging"); fitFieldToModules(); saveSoon(); } };
   head.addEventListener("pointerup", done);
   head.addEventListener("pointercancel", done);
 }
@@ -1469,8 +1502,10 @@ const SOUND_PRESETS = {
 function buildSoundChain(seq, key) {
   const def = SOUND_PRESETS[key];
   if (!def) return;
-  const bx = (dx) => clamp(seq.x + dx, 0, 1750 - 170);
-  const by = (dy) => clamp(seq.y + dy, 0, 1050 - 140);
+  // no upper clamp: the board grows to fit wherever the chain lands (each
+  // addModule call below triggers that growth)
+  const bx = (dx) => Math.max(0, seq.x + dx);
+  const by = (dy) => Math.max(0, seq.y + dy);
 
   const src = def.noise ? addModule("noise", bx(260), by(0)) : addModule("osc", bx(260), by(0));
   if (!def.noise) setSel(src, "wave", def.wave);
@@ -1812,6 +1847,7 @@ function loadPatch(data) {
     if (md.st && m.stepsData) {
       m.stepsData = md.st.map((s) => ({ n: s.n, on: !!s.on }));
       buildStepCells(m); // pattern length may differ from the default 8
+      fitFieldToModules(); // ...which can change the module's height
     }
     for (const id in md.k || {}) if (knobDef(m, id)) setKnobT(m, id, md.k[id], true);
     for (const id in md.s || {}) if (m.selEls[id]) setSel(m, id, md.s[id]);
@@ -2000,9 +2036,18 @@ for (const t of PALETTE_ORDER) {
 const zoomOut = document.getElementById("zoomOut");
 const zoomIn = document.getElementById("zoomIn");
 const zoomReset = document.getElementById("zoomReset");
+const zoomFit = document.getElementById("zoomFit");
 zoomOut.addEventListener("click", () => setZoom(zoom - 0.15));
 zoomIn.addEventListener("click", () => setZoom(zoom + 0.15));
 zoomReset.addEventListener("click", () => setZoom(1));
+zoomFit.addEventListener("click", () => {
+  fitFieldToModules();
+  const margin = 40;
+  const z = Math.min((work.clientWidth - margin) / fieldW, (work.clientHeight - margin) / fieldH);
+  setZoom(z);
+  work.scrollLeft = 0;
+  work.scrollTop = 0;
+});
 
 document.querySelectorAll("[data-preset]").forEach((b) => {
   b.addEventListener("click", () => {

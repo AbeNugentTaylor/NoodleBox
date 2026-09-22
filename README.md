@@ -58,6 +58,16 @@ dependencies, three files.
   oscillator (or other audio-rate source) anywhere downstream in its
   signal chain shows a non-blocking ⚠ next to its title
   (`chainHasSource()`) instead of just silently staying silent.
+- **The board** (`#field`) isn't a fixed size: `fitFieldToModules()` in
+  `script.js` recomputes its native width/height from the actual bounding
+  box of every module's current position each time one is added, moved,
+  removed, or resized (e.g. a sequencer's step count changing its height),
+  with a comfortable floor so an empty/small patch doesn't feel tiny. It
+  shrinks back down again too, not just grows, since it's recomputed from
+  scratch rather than tracked as a high-water mark. `ZOOM_MIN` is low
+  enough to pull back from a large patch, and the **fit** button next to
+  the zoom controls jumps straight to whatever zoom level shows the whole
+  current board at once.
 - **Hot-swapping**: a module can be replaced in place by another one with
   the exact same ports (same ids, kinds, and cv/strict roles on every in
   and out) — `SWAP_GROUPS` in `script.js` derives this from `TYPES` itself,

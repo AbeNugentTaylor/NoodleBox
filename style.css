@@ -109,9 +109,10 @@ body {
 
 /* #fieldSizer's own box is resized in JS to match the *visual* (zoomed)
    footprint of #field, so #work's scrollbars/scroll range always match what
-   you actually see; #field itself keeps its natural 1750x1050 coordinate
-   space (module x/y, port and cable math are all in these units) and is
-   just visually scaled on top of that reserved space. */
+   you actually see; #field itself has a native-space width/height (module
+   x/y, port and cable math are all in these units) that JS also grows or
+   shrinks to fit the current patch (fitFieldToModules in script.js) and is
+   just visually scaled on top of that. */
 #fieldSizer {
   position: relative;
 }
@@ -119,8 +120,6 @@ body {
   position: absolute;
   top: 0;
   left: 0;
-  width: 1750px;
-  height: 1050px;
   transform-origin: 0 0;
   background-image: radial-gradient(circle, #1d2233 1px, transparent 1.2px);
   background-size: 26px 26px;
@@ -153,8 +152,8 @@ body {
 .mhead {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 5px 8px;
+  gap: 5px;
+  padding: 4px 7px;
   cursor: grab;
   border-bottom: 1px solid var(--panel-edge);
   color: var(--mc);
@@ -213,14 +212,14 @@ body {
 .mbody {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 9px 10px 7px;
+  gap: 6px;
+  padding: 7px 8px 5px;
 }
 .mrow {
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  gap: 10px;
+  gap: 6px;
   flex-wrap: wrap;
 }
 
@@ -236,10 +235,10 @@ select {
 }
 
 /* knobs */
-.kwrap { display: flex; flex-direction: column; align-items: center; gap: 3px; width: 44px; }
+.kwrap { display: flex; flex-direction: column; align-items: center; gap: 2px; width: 36px; }
 .knob {
-  width: 34px;
-  height: 34px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   background: radial-gradient(circle at 35% 30%, #2b3350, #131726 70%);
   border: 1px solid var(--panel-edge);
@@ -252,17 +251,17 @@ select {
   content: "";
   position: absolute;
   left: 50%;
-  top: 3px;
+  top: 2px;
   width: 2px;
-  height: 9px;
+  height: 7px;
   margin-left: -1px;
   border-radius: 2px;
   background: var(--mc);
 }
 .klab {
-  font-size: 9px;
+  font-size: 8.5px;
   color: var(--dim);
-  letter-spacing: 0.04em;
+  letter-spacing: 0.03em;
   text-align: center;
   white-space: nowrap;
 }
@@ -272,11 +271,11 @@ select {
 .mports {
   display: flex;
   justify-content: space-between;
-  gap: 10px;
-  padding: 6px 8px 7px;
+  gap: 6px;
+  padding: 5px 7px 6px;
   border-top: 1px solid var(--panel-edge);
 }
-.pgroup { display: flex; gap: 12px; }
+.pgroup { display: flex; gap: 8px; }
 .pwrap { display: flex; flex-direction: column; align-items: center; gap: 2px; }
 .pwrap span { font-size: 8.5px; color: var(--dim); letter-spacing: 0.04em; }
 
@@ -313,14 +312,14 @@ select {
 .seqPreset select { max-width: 130px; }
 
 /* sequencer steps */
-.steps { display: flex; gap: 3px; flex-wrap: wrap; max-width: 300px; }
+.steps { display: flex; gap: 2px; flex-wrap: wrap; max-width: 264px; }
 .cell {
   position: relative;
-  width: 30px;
-  height: 66px;
+  width: 22px;
+  height: 52px;
   background: #0e1220;
   border: 1px solid var(--panel-edge);
-  border-radius: 5px;
+  border-radius: 4px;
   overflow: hidden;
   cursor: ns-resize;
   touch-action: none;
@@ -339,7 +338,7 @@ select {
   right: 0;
   bottom: 2px;
   text-align: center;
-  font-size: 9px;
+  font-size: 8px;
   color: var(--ink);
   pointer-events: none;
 }
@@ -363,8 +362,8 @@ select {
 /* scope */
 .scope {
   display: block;
-  width: 150px;
-  height: 54px;
+  width: 128px;
+  height: 46px;
   background: #0e1220;
   border: 1px solid var(--panel-edge);
   border-radius: 5px;
@@ -407,6 +406,14 @@ select {
   min-width: 42px;
 }
 #zoomReset:hover { color: var(--ink); }
+#zoomFit {
+  font-size: 11px;
+  color: var(--dim);
+  padding: 0 9px;
+  border-left: 1px solid var(--panel-edge);
+  margin-left: 2px;
+}
+#zoomFit:hover { color: var(--ink); }
 
 /* ---------- toast ---------- */
 #toast {
