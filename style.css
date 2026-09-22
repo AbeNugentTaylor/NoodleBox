@@ -13,6 +13,11 @@
 html, body {
   margin: 0;
   height: 100%;
+  /* iOS Safari's address bar collapses/expands as you scroll, and 100%
+     doesn't track that -- it's pinned to the *largest* possible viewport,
+     so the bottom of the page ends up hidden behind the browser chrome
+     whenever it's expanded. 100dvh tracks the actual visible viewport. */
+  height: 100dvh;
   background: var(--bg);
   color: var(--ink);
   font: 14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -70,8 +75,8 @@ body {
   border-color: #3a9d6e;
   color: #7cffb2;
   /* pin it to the left edge of the bar so it's still reachable after
-     scrolling sideways to the palette/presets on a narrow screen — a
-     no-op on wider screens where the bar never scrolls horizontally */
+     scrolling sideways to the presets on a narrow screen — a no-op on
+     wider screens where the bar never scrolls horizontally */
   position: sticky;
   left: 0;
   z-index: 2;
@@ -80,11 +85,11 @@ body {
 
 .chips { display: flex; align-items: center; flex-wrap: wrap; gap: 5px; }
 .chips button { padding: 3px 9px; }
-#palette button { color: var(--mc, var(--ink)); }
 
-/* Narrow screens: the bar has a lot in it (palette, presets, transport).
-   Rather than let it wrap to several rows and eat the canvas below, pin it
-   to one slim scrollable strip — swipe sideways to reach presets/clear/help. */
+/* Narrow screens: the bar still has a fair bit in it (add, presets,
+   transport). Rather than let it wrap to several rows and eat the canvas
+   below, pin it to one slim scrollable strip — swipe sideways to reach
+   presets/clear/help. */
 @media (max-width: 700px) {
   #bar {
     flex-wrap: nowrap;
@@ -473,3 +478,83 @@ select {
   cursor: pointer;
   font-weight: 700;
 }
+
+/* ---------- add-module button + panel ---------- */
+.addBtn {
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--bg);
+  background: var(--audio);
+  border: 0;
+  border-radius: 999px;
+  padding: 5px 12px;
+  cursor: pointer;
+}
+.addBtn:hover { filter: brightness(1.08); }
+
+#addPanel[hidden] { display: none; }
+#addPanel {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(5, 6, 10, 0.6);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+#addPanel .sheet {
+  width: 100%;
+  max-width: 520px;
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--panel);
+  border: 1px solid var(--panel-edge);
+  border-bottom: 0;
+  border-radius: 14px 14px 0 0;
+  box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.55);
+}
+.sheetHead {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--panel-edge);
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.sheetHead span { flex: 1; }
+.addBack, #addClose {
+  background: none;
+  border: 0;
+  color: var(--dim);
+  font: inherit;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 2px 4px;
+}
+.addBack:hover, #addClose:hover { color: var(--ink); }
+.addGrid {
+  overflow: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 8px;
+  padding: 14px;
+}
+.addGrid button {
+  font: inherit;
+  font-size: 13px;
+  color: var(--mc, var(--ink));
+  background: #0e1220;
+  border: 1px solid var(--panel-edge);
+  border-radius: 8px;
+  padding: 12px 8px;
+  cursor: pointer;
+  text-align: center;
+}
+.addGrid button:hover { border-color: var(--mc, var(--dim)); background: #131728; }

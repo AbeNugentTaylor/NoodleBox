@@ -103,8 +103,8 @@ const CABLE_COLOR = { audio: "#6ee7ff", gate: "#ffb066" };
    #fieldSizer's own box is resized to match so #work's scroll range lines
    up with what's actually on screen. Everything that reads real pointer
    coordinates against #field has to divide by `zoom` to land back in that
-   native space — see portCenter, moveWire, bindModuleDrag, and the palette
-   "+module" placement below.
+   native space — see portCenter, moveWire, bindModuleDrag, and
+   placeNewModule below.
    Unlike a fixed-size board, #field's own native width/height (fieldW/
    fieldH) aren't constants: fitFieldToModules() keeps them hugging
    whatever the current patch actually needs (with a comfortable floor for
@@ -134,6 +134,27 @@ function fitFieldToModules() {
   fieldW = w;
   fieldH = h;
   applyFieldSize();
+}
+/* nudges the scroll position just enough to bring a set of modules'
+   bounding box into view, without moving it more than necessary -- used
+   after auto-building a chain (buildSoundChain) so the new modules aren't
+   left sitting off-screen past whatever's currently in view */
+function scrollIntoView(mods) {
+  if (!mods.length) return;
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (const m of mods) {
+    minX = Math.min(minX, m.x);
+    minY = Math.min(minY, m.y);
+    maxX = Math.max(maxX, m.x + (m.el ? m.el.offsetWidth : 170));
+    maxY = Math.max(maxY, m.y + (m.el ? m.el.offsetHeight : 140));
+  }
+  const vx1 = work.scrollLeft / zoom, vy1 = work.scrollTop / zoom;
+  const vx2 = vx1 + work.clientWidth / zoom, vy2 = vy1 + work.clientHeight / zoom;
+  let dx = 0, dy = 0;
+  if (maxX > vx2) dx = maxX - vx2; else if (minX < vx1) dx = minX - vx1;
+  if (maxY > vy2) dy = maxY - vy2; else if (minY < vy1) dy = minY - vy1;
+  work.scrollLeft += dx * zoom;
+  work.scrollTop += dy * zoom;
 }
 function setZoom(z, anchorClientX, anchorClientY) {
   const wr = work.getBoundingClientRect();
@@ -1029,9 +1050,15 @@ const TYPES = {
   },
 };
 
-const PALETTE_ORDER = [
-  "osc", "lfo", "env", "amp", "filter", "clock", "seq", "arp", "noise", "delay", "dist", "verb", "out",
-  "kick", "snare", "hat", "clap", "cymbal", "pluck", "fuzz", "crush", "chorus", "phaser",
+/* the "+ module" panel groups TYPES into categories instead of one long
+   flat list -- picking a category narrows to just its modules */
+const MODULE_CATEGORIES = [
+  { label: "sources", types: ["osc", "lfo", "noise", "clock"] },
+  { label: "sequencing", types: ["seq", "arp"] },
+  { label: "shaping", types: ["env", "amp", "filter"] },
+  { label: "drums", types: ["kick", "snare", "hat", "clap", "cymbal", "pluck"] },
+  { label: "effects", types: ["delay", "dist", "verb", "fuzz", "crush", "chorus", "phaser"] },
+  { label: "output", types: ["out"] },
 ];
 
 /* Hot-swap: two module types are drop-in replacements for each other only
@@ -1535,6 +1562,7 @@ function buildSoundChain(seq, key) {
   connect(port(amp, "out", "out"), port(spk, "in", "in"));
 
   redrawAll();
+  scrollIntoView([seq, src, flt, env, amp, spk]);
   saveSoon();
 }
 
@@ -2021,17 +2049,52 @@ const PRESETS = { starter: presetStarter, acid: presetAcid, drift: presetDrift, 
 
 /* ---------------- toolbar ---------------- */
 
-const palette = document.getElementById("palette");
-for (const t of PALETTE_ORDER) {
-  const b = document.createElement("button");
-  b.textContent = "+ " + TYPES[t].title;
-  b.style.setProperty("--mc", TYPES[t].color);
-  b.addEventListener("click", () => {
-    addModule(t, work.scrollLeft / zoom + 60 + Math.random() * 120, work.scrollTop / zoom + 80 + Math.random() * 120);
-    saveSoon();
-  });
-  palette.appendChild(b);
+/* "+ module" panel: a big add button opens a sheet of categories; picking
+   one narrows to its modules instead of showing all ~23 types at once */
+const addBtn = document.getElementById("addBtn");
+const addPanel = document.getElementById("addPanel");
+const addTitle = document.getElementById("addTitle");
+const addBack = document.getElementById("addBack");
+const addClose = document.getElementById("addClose");
+const addGrid = document.getElementById("addGrid");
+
+function placeNewModule(type) {
+  addModule(type, work.scrollLeft / zoom + 60 + Math.random() * 120, work.scrollTop / zoom + 80 + Math.random() * 120);
+  saveSoon();
+  closeAddPanel();
 }
+function showCategories() {
+  addTitle.textContent = "add a module";
+  addBack.hidden = true;
+  addGrid.innerHTML = "";
+  for (const cat of MODULE_CATEGORIES) {
+    const b = document.createElement("button");
+    b.textContent = cat.label;
+    b.addEventListener("click", () => showCategory(cat));
+    addGrid.appendChild(b);
+  }
+}
+function showCategory(cat) {
+  addTitle.textContent = cat.label;
+  addBack.hidden = false;
+  addGrid.innerHTML = "";
+  for (const t of cat.types) {
+    const b = document.createElement("button");
+    b.textContent = TYPES[t].title;
+    b.style.setProperty("--mc", TYPES[t].color);
+    b.addEventListener("click", () => placeNewModule(t));
+    addGrid.appendChild(b);
+  }
+}
+function openAddPanel() {
+  showCategories();
+  addPanel.hidden = false;
+}
+function closeAddPanel() { addPanel.hidden = true; }
+addBtn.addEventListener("click", openAddPanel);
+addBack.addEventListener("click", showCategories);
+addClose.addEventListener("click", closeAddPanel);
+addPanel.addEventListener("click", (e) => { if (e.target === addPanel) closeAddPanel(); });
 
 const zoomOut = document.getElementById("zoomOut");
 const zoomIn = document.getElementById("zoomIn");

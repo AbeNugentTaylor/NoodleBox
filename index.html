@@ -13,7 +13,7 @@
       <a class="home" href="https://abe.cool" title="back to abe.cool">✨</a>
       <h1>Noodle Box</h1>
       <button id="play" class="play" title="play / stop (space)">▶</button>
-      <div class="chips" id="palette" aria-label="add a module"></div>
+      <button id="addBtn" class="addBtn" title="add a module" aria-haspopup="true">+ module</button>
       <div class="spacer"></div>
       <div class="chips presets">
         <span class="dim">patches:</span>
@@ -40,11 +40,22 @@
       </div>
     </div>
 
+    <div id="addPanel" hidden>
+      <div class="sheet">
+        <div class="sheetHead">
+          <button id="addBack" class="addBack" title="back to categories" hidden>←</button>
+          <span id="addTitle">add a module</span>
+          <button id="addClose" title="close">×</button>
+        </div>
+        <div id="addGrid" class="addGrid"></div>
+      </div>
+    </div>
+
     <div id="help" hidden>
       <div class="card">
         <h2>How to play</h2>
         <ul>
-          <li>Press <b>▶</b> to start the clock (and the sound).</li>
+          <li>Press <b>▶</b> to start the clock (and the sound). Tap <b>+ module</b> to add one — pick a category, then the module.</li>
           <li><b>Drag from a jack</b> to run a cable — outputs on the right of a module, inputs on the left. Every jack that cable could actually feed lights up as you drag; everything else fades back, so you can't land on a dead end. Prefer tapping? <b>Tap a jack</b>, then tap the (lit-up) jack you want to land on — tap the same jack again to cancel. Either way, tapping a jack (without moving) shows what it does.</li>
           <li><b>Click a cable</b> to snip it. An input with a single cable can be dragged straight off to rewire it; an input already carrying several (fan several drums into one speaker, say) just gets another when you drag to it — click the specific cable you want to remove instead.</li>
           <li><b>Drag knobs</b> up/down to turn them (hold <b>shift</b> for fine control), double-click to reset.</li>
